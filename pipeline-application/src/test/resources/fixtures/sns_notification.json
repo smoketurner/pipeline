@@ -1,0 +1,12 @@
+{
+  "Type" : "Notification",
+  "MessageId" : "de3ef921-5748-598e-b5cf-b79d21806aeb",
+  "TopicArn" : "arn:aws:sns:us-east-1:860114833029:smoketurner-sns",
+  "Subject" : "Amazon S3 Notification",
+  "Message" : "{\"Records\":[{\"eventVersion\":\"2.0\",\"eventSource\":\"aws:s3\",\"awsRegion\":\"us-east-1\",\"eventTime\":\"2015-11-10T22:49:44.111Z\",\"eventName\":\"ObjectCreated:Put\",\"userIdentity\":{\"principalId\":\"A3CRXGOJ1ZPC4A\"},\"requestParameters\":{\"sourceIPAddress\":\"127.0.0.1\"},\"responseElements\":{\"x-amz-request-id\":\"49255A18DF1CAA36\",\"x-amz-id-2\":\"NhI3XC84PX18izkHNUtu76hod2Ssrmjfw6UznoxLYBMNV6rKI2JAIUBLfAQ8KMC7\"},\"s3\":{\"s3SchemaVersion\":\"1.0\",\"configurationId\":\"118d0b91-dff3-40e2-8940-81e7f71bdb1a\",\"bucket\":{\"name\":\"smoketurner-uploads\",\"ownerIdentity\":{\"principalId\":\"A3CRXGOJ1ZPC4A\"},\"arn\":\"arn:aws:s3:::smoketurner-uploads\"},\"object\":{\"key\":\"events/testing.json.gz\",\"size\":648,\"eTag\":\"181ce4ff68b22a45f8e5e763f361a96c\",\"sequencer\":\"005642748811458220\"}}}]}",
+  "Timestamp" : "2015-11-10T22:49:44.296Z",
+  "SignatureVersion" : "1",
+  "Signature" : "KnjRTeghHm1BbAkjfCAY1f7X8sQN/40DRi4+2iD7q34JR80JlZAqt8XInH5zFlRzuGUFREhmaGXL7nk5VO/fnNdcvpvmx0M9GmuMocadr61yXAyVTbZ9lo3cfyLsMGOdCTo2gr6Or09cU2Lhe0OrOwS953JIF87sbY0OEpFGMJYuVMRRavNd44YHK5403QLCR1YT+IUGzdyAQy+ArGf4b2Z8lGhiBajgB2mTl2bcxOmm+FsExIAqHp/EDIXQ0uz1FH0J6k1I1f/5r8Wy7WljpDaHViI6NpVCTlZCNV0/US33qFcoX5dc+yAWrO1neD89pMXW6jp00vOzRwIPGrhUCQ==",
+  "SigningCertURL" : "https://sns.us-east-1.amazonaws.com/SimpleNotificationService-bb750dd426d95ee9390147a5624348ee.pem",
+  "UnsubscribeURL" : "https://sns.us-east-1.amazonaws.com/?Action=Unsubscribe&SubscriptionArn=arn:aws:sns:us-east-1:860114833029:smoketurner-sns:ce4daa3c-22db-4d82-91e1-9cbbcca42e64"
+}

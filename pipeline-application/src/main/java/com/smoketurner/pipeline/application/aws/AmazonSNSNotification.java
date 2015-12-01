@@ -1,0 +1,85 @@
+/**
+ * Copyright 2015 Smoke Turner, LLC.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ */
+package com.smoketurner.pipeline.application.aws;
+
+import java.util.Objects;
+
+import javax.annotation.concurrent.Immutable;
+
+import org.joda.time.DateTime;
+
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.MoreObjects;
+
+@Immutable
+@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public final class AmazonSNSNotification {
+
+  private final String subject;
+  private final String message;
+  private final DateTime timestamp;
+
+  @JsonCreator
+  public AmazonSNSNotification(@JsonProperty("Subject") final String subject,
+      @JsonProperty("Message") final String message,
+      @JsonProperty("Timestamp") final DateTime timestamp) {
+    this.subject = subject;
+    this.message = message;
+    this.timestamp = timestamp;
+  }
+
+  @JsonProperty("Subject")
+  public String getSubject() {
+    return subject;
+  }
+
+  @JsonProperty("Message")
+  public String getMessage() {
+    return message;
+  }
+
+  @JsonProperty("Timestamp")
+  public DateTime getTimestamp() {
+    return timestamp;
+  }
+
+  @Override
+  public boolean equals(final Object obj) {
+    if (this == obj) {
+      return true;
+    }
+    if ((obj == null) || (getClass() != obj.getClass())) {
+      return false;
+    }
+
+    final AmazonSNSNotification other = (AmazonSNSNotification) obj;
+    return Objects.equals(subject, other.subject) && Objects.equals(message, other.message)
+        && Objects.equals(timestamp, other.timestamp);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(subject, message, timestamp);
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this).add("subject", subject).add("message", message)
+        .add("timestamp", timestamp).toString();
+  }
+}
