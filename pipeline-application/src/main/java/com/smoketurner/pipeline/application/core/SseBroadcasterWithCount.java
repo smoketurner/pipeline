@@ -35,7 +35,7 @@ public class SseBroadcasterWithCount extends SseBroadcaster {
     final boolean result = super.add(chunkedOutput);
     if (result) {
       final int active = connectionCounter.incrementAndGet();
-      LOGGER.debug("Opened new connection (total {})", active);
+      LOGGER.debug("Opened new connection ({} total)", active);
     }
     return result;
   }
@@ -43,7 +43,7 @@ public class SseBroadcasterWithCount extends SseBroadcaster {
   @Override
   public void onClose(final ChunkedOutput<OutboundEvent> chunkedOutput) {
     final int active = connectionCounter.decrementAndGet();
-    LOGGER.debug("Closed connection (total {})", active);
+    LOGGER.debug("Closed connection ({} total)", active);
   }
 
   public int size() {

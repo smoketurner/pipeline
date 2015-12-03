@@ -30,22 +30,14 @@ import com.google.common.base.MoreObjects;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public final class AmazonSNSNotification {
 
-  private final String subject;
   private final String message;
   private final DateTime timestamp;
 
   @JsonCreator
-  public AmazonSNSNotification(@JsonProperty("Subject") final String subject,
-      @JsonProperty("Message") final String message,
+  public AmazonSNSNotification(@JsonProperty("Message") final String message,
       @JsonProperty("Timestamp") final DateTime timestamp) {
-    this.subject = subject;
     this.message = message;
     this.timestamp = timestamp;
-  }
-
-  @JsonProperty("Subject")
-  public String getSubject() {
-    return subject;
   }
 
   @JsonProperty("Message")
@@ -68,18 +60,17 @@ public final class AmazonSNSNotification {
     }
 
     final AmazonSNSNotification other = (AmazonSNSNotification) obj;
-    return Objects.equals(subject, other.subject) && Objects.equals(message, other.message)
-        && Objects.equals(timestamp, other.timestamp);
+    return Objects.equals(message, other.message) && Objects.equals(timestamp, other.timestamp);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(subject, message, timestamp);
+    return Objects.hash(message, timestamp);
   }
 
   @Override
   public String toString() {
-    return MoreObjects.toStringHelper(this).add("subject", subject).add("message", message)
-        .add("timestamp", timestamp).toString();
+    return MoreObjects.toStringHelper(this).add("message", message).add("timestamp", timestamp)
+        .toString();
   }
 }

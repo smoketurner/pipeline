@@ -17,6 +17,7 @@ import java.util.concurrent.ExecutorService;
 
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.sqs.AmazonSQSClient;
+import com.codahale.metrics.MetricRegistry;
 import com.smoketurner.pipeline.application.config.PipelineConfiguration;
 import com.smoketurner.pipeline.application.core.AmazonS3Downloader;
 import com.smoketurner.pipeline.application.core.AmazonSQSIterator;
@@ -66,6 +67,8 @@ public class PipelineApplication extends Application<PipelineConfiguration> {
   public void run(final PipelineConfiguration configuration, final Environment environment)
       throws Exception {
 
+    final MetricRegistry registry = environment.metrics();
+
     // AWS clients
     final AmazonS3Client s3 = new AmazonS3Client();
     environment.lifecycle().manage(new AmazonS3ClientManager(s3));
@@ -73,7 +76,7 @@ public class PipelineApplication extends Application<PipelineConfiguration> {
     environment.lifecycle().manage(new AmazonSQSClientManager(sqs));
 
     final AmazonSQSIterator sqsIterator =
-        new AmazonSQSIterator(sqs, configuration.getAws().getQueueUrl());
+        new AmazonSQSIterator(sqs, configuration.getAws().getQueueUrl(), registry);
     final AmazonS3Downloader s3Downloader = new AmazonS3Downloader(s3);
 
     final SseBroadcasterWithCount broadcaster = new SseBroadcasterWithCount();
@@ -81,8 +84,8 @@ public class PipelineApplication extends Application<PipelineConfiguration> {
     final ExecutorService service =
         environment.lifecycle().executorService("sqs-%d").minThreads(1).build();
 
-    final PipelineRunnable runnable = new PipelineRunnable(s3Downloader, sqsIterator,
-        environment.metrics(), environment.getObjectMapper(), broadcaster);
+    final PipelineRunnable runnable =
+        new PipelineRunnable(s3Downloader, sqsIterator, registry, broadcaster);
     service.execute(runnable);
 
     // resources

@@ -13,16 +13,15 @@
  */
 package com.smoketurner.pipeline.application.core;
 
-import java.io.IOException;
-
 import javax.annotation.Nonnull;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.amazonaws.AmazonClientException;
+import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.GetObjectRequest;
-import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.S3Object;
 import com.google.common.base.Preconditions;
 import com.smoketurner.pipeline.application.aws.AmazonEventRecord;
@@ -45,13 +44,20 @@ public class AmazonS3Downloader {
     this.s3 = Preconditions.checkNotNull(s3);
   }
 
+  /**
+   * Retrieves a file from S3
+   *
+   * @param record S3 event notification record to download
+   * @return S3 object
+   * @throws Exception if unable to download the object
+   */
   public S3Object fetch(final AmazonEventRecord record) throws Exception {
     final AmazonS3Object object = converter.convert(record);
     if (object == null) {
-      throw new IOException("Failed to convert event record");
+      throw new Exception("Failed to convert event record");
     }
 
-    LOGGER.debug("S3 Object: {}", object);
+    LOGGER.debug("Retrieving key: {}", object.getKey());
 
     final GetObjectRequest request = new GetObjectRequest(object.getBucketName(), object.getKey());
     if (object.getVersionId().isPresent()) {
@@ -61,27 +67,39 @@ public class AmazonS3Downloader {
     final S3Object download;
     try {
       download = s3.getObject(request);
-    } catch (Exception e) {
+    } catch (AmazonServiceException e) {
+      LOGGER.error("Failed to download object from S3", e);
+      throw e;
+    } catch (AmazonClientException e) {
       LOGGER.error("Failed to download object from S3", e);
       throw e;
     }
 
     if (download == null) {
       LOGGER.error("Constraints not met for {}/{}", object.getBucketName(), object.getKey());
-      throw new IOException("Constraints not met for download");
+      throw new Exception("Constraints not met for download");
     }
 
-    if (download.getObjectMetadata().getContentLength() < 1) {
+    final long contentLength = download.getObjectMetadata().getContentLength();
+    if (contentLength < 1) {
       LOGGER.debug("Object size is zero, skipping download");
-      throw new IOException("Object size is zero");
+      throw new Exception("Object size is zero, skipping download");
     }
+
+    LOGGER.debug("Streaming key ({} bytes): {}", contentLength, download.getKey());
 
     return download;
   }
 
+  /**
+   * Determine whether the object is gzipped or not by inspecting the ContentEncoding object
+   * property or whether the key ends in .gz
+   * 
+   * @param object S3 object to inspect
+   * @return true if the file is gzipped, otherwise false
+   */
   public static boolean isGZipped(final S3Object object) {
-    final ObjectMetadata metadata = object.getObjectMetadata();
-    final String encoding = metadata.getContentEncoding();
+    final String encoding = object.getObjectMetadata().getContentEncoding();
     if (GZIP_ENCODING.equalsIgnoreCase(encoding)) {
       return true;
     } else if (object.getKey().endsWith(GZIP_EXTENSION)) {

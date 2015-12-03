@@ -18,9 +18,9 @@ import static com.codahale.metrics.MetricRegistry.name;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 import javax.annotation.Nonnull;
 import javax.ws.rs.core.MediaType;
@@ -33,59 +33,62 @@ import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectInputStream;
 import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.ReceiveMessageResult;
+import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
-import com.google.common.base.Strings;
-import com.google.common.io.CharStreams;
-import com.google.common.io.LineProcessor;
 import com.smoketurner.pipeline.application.aws.AmazonEventRecord;
 import com.smoketurner.pipeline.application.aws.AmazonEventRecords;
 import com.smoketurner.pipeline.application.aws.AmazonSNSNotification;
 
+import io.dropwizard.jackson.Jackson;
+
 public class PipelineRunnable implements Runnable {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(PipelineRunnable.class);
+  private static final ObjectMapper MAPPER = Jackson.newObjectMapper();
+  private static final OutboundEvent PING_EVENT =
+      new OutboundEvent.Builder().name("ping").data("ping").build();
+
   private final AmazonS3Downloader s3;
   private final AmazonSQSIterator sqs;
-  private final ObjectMapper mapper;
   private final SseBroadcasterWithCount broadcaster;
-  private final Meter messagesMeter;
-  private final Meter recordsMeter;
+
+  // metrics
+  private final Histogram recordCounts;
+  private final Meter eventRate;
+  private final Meter pingRate;
 
   /**
    * Constructor
    *
-   * @param s3 Amazon S3 client
-   * @param sqs Amazon SQS client
+   * @param s3 Amazon S3 downloader
+   * @param sqs Amazon SQS iterator
    * @param registry Metric Registry
-   * @param mapper Object Mapper
    * @param broadcaster SSE broadcaster
    */
   public PipelineRunnable(@Nonnull final AmazonS3Downloader s3,
       @Nonnull final AmazonSQSIterator sqs, @Nonnull final MetricRegistry registry,
-      @Nonnull final ObjectMapper mapper, @Nonnull final SseBroadcasterWithCount broadcaster) {
-    Preconditions.checkNotNull(registry);
+      @Nonnull final SseBroadcasterWithCount broadcaster) {
+
     this.s3 = Preconditions.checkNotNull(s3);
     this.sqs = Preconditions.checkNotNull(sqs);
-
-    this.mapper = Preconditions.checkNotNull(mapper);
     this.broadcaster = Preconditions.checkNotNull(broadcaster);
 
-    this.messagesMeter = registry.meter(name(PipelineRunnable.class, "sqs-messages"));
-    this.recordsMeter = registry.meter(name(PipelineRunnable.class, "s3-records"));
+    Preconditions.checkNotNull(registry);
+    this.recordCounts = registry.histogram(name(PipelineRunnable.class, "record-counts"));
+    this.eventRate = registry.meter(name(PipelineRunnable.class, "broadcast", "event-sends"));
+    this.pingRate = registry.meter(name(PipelineRunnable.class, "broadcast", "ping-sends"));
   }
 
   @Override
   public void run() {
-    while (!Thread.currentThread().isInterrupted()) {
+    while (sqs.hasNext() && !Thread.currentThread().isInterrupted()) {
 
-      // send heartbeat ping event to all connections
-      final OutboundEvent.Builder builder = new OutboundEvent.Builder();
-      builder.name("ping");
-      builder.data("ping");
-      broadcaster.broadcast(builder.build());
+      // send heartbeat ping event to all connections to flush out disconnected clients
+      broadcaster.broadcast(PING_EVENT);
+      pingRate.mark();
 
       if (broadcaster.size() < 1) {
         try {
@@ -97,40 +100,44 @@ public class PipelineRunnable implements Runnable {
         }
       }
 
-      LOGGER.debug("Requesting messages");
-
       final ReceiveMessageResult result = sqs.next();
-      this.messagesMeter.mark(result.getMessages().size());
-
-      if (broadcaster.size() < 1) {
-        LOGGER.debug("No connections found, not processing SQS messages");
-        continue;
-      }
-
       for (Message message : result.getMessages()) {
-        LOGGER.debug("Received message: {}", message);
+        if (LOGGER.isTraceEnabled()) {
+          LOGGER.trace("Received SQS message: {}", message);
+        } else if (LOGGER.isDebugEnabled()) {
+          LOGGER.debug("Received SQS message: {}", message.getMessageId());
+        }
+
+        if (broadcaster.size() < 1) {
+          LOGGER.debug("No connections found, skipping SQS message processing");
+          break;
+        }
 
         final AmazonSNSNotification notification;
         try {
-          notification = mapper.readValue(message.getBody(), AmazonSNSNotification.class);
+          notification = MAPPER.readValue(message.getBody(), AmazonSNSNotification.class);
         } catch (IOException e) {
           LOGGER.error("Failed to parse SNS notification", e);
           continue;
         }
 
-        LOGGER.debug("Parsed notification: {}", notification);
+        LOGGER.trace("Parsed SNS notification: {}", notification);
 
         final AmazonEventRecords records;
         try {
-          records = mapper.readValue(notification.getMessage(), AmazonEventRecords.class);
+          records = MAPPER.readValue(notification.getMessage(), AmazonEventRecords.class);
         } catch (IOException e) {
           LOGGER.error("Failed to parse S3 event records", e);
           continue;
         }
 
-        this.recordsMeter.mark(records.getRecords().size());
+        LOGGER.trace("Parsed S3 event records: {}", records);
 
-        boolean fullyProcessed = true;
+        final int recordCount = records.getRecords().size();
+        LOGGER.debug("Parsed {} event records from S3", recordCount);
+        this.recordCounts.update(recordCount);
+
+        boolean fullyProcessed = false;
 
         for (AmazonEventRecord record : records.getRecords()) {
           if (broadcaster.size() < 1) {
@@ -146,11 +153,10 @@ public class PipelineRunnable implements Runnable {
             continue;
           }
 
-          boolean broadcastFailure = false;
-
           try (S3ObjectInputStream input = download.getObjectContent()) {
-            final Reader reader;
+            final AtomicLong eventCount = new AtomicLong(0L);
 
+            final BufferedReader reader;
             if (AmazonS3Downloader.isGZipped(download)) {
               reader = new BufferedReader(new InputStreamReader(new StreamingGZIPInputStream(input),
                   StandardCharsets.UTF_8));
@@ -158,53 +164,52 @@ public class PipelineRunnable implements Runnable {
               reader = new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8));
             }
 
-            broadcastFailure = CharStreams.readLines(reader, new LineProcessor<Boolean>() {
-              private boolean isFailure = false;
-
-              @Override
-              public boolean processLine(final String line) throws IOException {
-                if (Strings.isNullOrEmpty(line)) {
-                  // skip empty lines
-                  return true;
-                }
-
-                final OutboundEvent.Builder builder = new OutboundEvent.Builder();
-                builder.name("event");
-                builder.mediaType(MediaType.APPLICATION_JSON_TYPE);
-                builder.data(line);
-
-                broadcaster.broadcast(builder.build());
-
-                // If we have no active connections, assume the broadcast failed
-                if (broadcaster.size() < 1) {
-                  LOGGER.error("No connections found, aborting download");
-                  isFailure = true;
-                  return false;
-                }
-                return true;
+            boolean broadcastFailure = false;
+            String line = null;
+            while ((line = reader.readLine()) != null) {
+              // skip empty lines
+              if (line.isEmpty()) {
+                continue;
               }
 
-              @Override
-              public Boolean getResult() {
-                return isFailure;
+              eventCount.incrementAndGet();
+
+              final OutboundEvent event = new OutboundEvent.Builder().name("event")
+                  .mediaType(MediaType.APPLICATION_JSON_TYPE).data(line).build();
+
+              broadcaster.broadcast(event);
+              eventRate.mark();
+
+              // If we have no active connections, assume the broadcast failed
+              if (broadcaster.size() < 1) {
+                LOGGER.error("No connections found, aborting download");
+                broadcastFailure = true;
+                break;
               }
-            });
+            }
+
+            if (broadcastFailure) {
+              LOGGER.error("Partial events broadcast ({} sent) from key: {}", eventCount.get(),
+                  download.getKey());
+              fullyProcessed = false;
+            } else {
+              LOGGER.info("Successfully broadcast all {} events from key: {}", eventCount.get(),
+                  download.getKey());
+              fullyProcessed = true;
+            }
 
           } catch (IOException e) {
-            LOGGER.error("Failed to download object from S3", e);
-            fullyProcessed = false;
-            break;
-          }
-
-          if (broadcastFailure) {
-            LOGGER.error("Failed to broadcast all events");
+            LOGGER.error("Error processing key: " + download.getKey(), e);
             fullyProcessed = false;
             break;
           }
         }
 
+        // If all of the S3 event notifications in a given SQS message have been processed, it is
+        // safe to delete the message from SQS. Otherwise, we need to wait until the visibility
+        // timeout expires and try the message again.
         if (fullyProcessed) {
-          sqs.deleteMessage(message.getReceiptHandle());
+          sqs.deleteMessage(message);
         }
       }
     }

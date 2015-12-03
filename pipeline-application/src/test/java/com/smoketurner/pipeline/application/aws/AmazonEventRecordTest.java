@@ -20,16 +20,16 @@ import org.junit.Test;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import io.dropwizard.jackson.Jackson;
 import io.dropwizard.testing.FixtureHelpers;
 
 public class AmazonEventRecordTest {
-  private static final ObjectMapper MAPPER = new ObjectMapper();
+  private static final ObjectMapper MAPPER = Jackson.newObjectMapper();
   private AmazonEventRecord record;
 
   @Before
   public void setUp() throws Exception {
-    final AmazonEventRecordS3Bucket bucket =
-        new AmazonEventRecordS3Bucket("bucket-name", "bucket-ARN");
+    final AmazonEventRecordS3Bucket bucket = new AmazonEventRecordS3Bucket("bucket-name");
     final AmazonEventRecordS3Object object = new AmazonEventRecordS3Object("object-key", 100,
         "object eTag", "object version", "event sequence");
     final AmazonEventRecordS3 s3 = new AmazonEventRecordS3("1.0", bucket, object);

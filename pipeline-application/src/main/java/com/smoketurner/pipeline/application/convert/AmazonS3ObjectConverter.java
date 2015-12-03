@@ -31,7 +31,7 @@ public class AmazonS3ObjectConverter extends Converter<AmazonEventRecord, Amazon
 
   @Override
   protected AmazonEventRecord doBackward(AmazonS3Object b) {
-    final AmazonEventRecordS3Bucket bucket = new AmazonEventRecordS3Bucket(b.getBucketName(), null);
+    final AmazonEventRecordS3Bucket bucket = new AmazonEventRecordS3Bucket(b.getBucketName());
     final AmazonEventRecordS3Object object = new AmazonEventRecordS3Object(b.getKey(), b.getSize(),
         b.getETag().orNull(), b.getVersionId().orNull(), null);
     final AmazonEventRecordS3 s3 = new AmazonEventRecordS3(null, bucket, object);

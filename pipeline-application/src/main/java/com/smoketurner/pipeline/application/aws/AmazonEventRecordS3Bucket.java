@@ -29,23 +29,15 @@ import com.google.common.base.MoreObjects;
 public final class AmazonEventRecordS3Bucket {
 
   private final String name;
-  private final String arn;
 
   @JsonCreator
-  public AmazonEventRecordS3Bucket(@JsonProperty("name") final String name,
-      @JsonProperty("arn") final String arn) {
+  public AmazonEventRecordS3Bucket(@JsonProperty("name") final String name) {
     this.name = name;
-    this.arn = arn;
   }
 
   @JsonProperty
   public String getName() {
     return name;
-  }
-
-  @JsonProperty("arn")
-  public String getARN() {
-    return arn;
   }
 
   @Override
@@ -58,16 +50,16 @@ public final class AmazonEventRecordS3Bucket {
     }
 
     final AmazonEventRecordS3Bucket other = (AmazonEventRecordS3Bucket) obj;
-    return Objects.equals(name, other.name) && Objects.equals(arn, other.arn);
+    return Objects.equals(name, other.name);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(name, arn);
+    return Objects.hash(name);
   }
 
   @Override
   public String toString() {
-    return MoreObjects.toStringHelper(this).add("name", name).add("arn", arn).toString();
+    return MoreObjects.toStringHelper(this).add("name", name).toString();
   }
 }
