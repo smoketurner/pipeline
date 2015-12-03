@@ -14,13 +14,10 @@
 package com.smoketurner.pipeline.application.aws;
 
 import static org.assertj.core.api.Assertions.assertThat;
-
 import org.junit.Before;
 import org.junit.Test;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
-
 import io.dropwizard.jackson.Jackson;
 import io.dropwizard.testing.FixtureHelpers;
 

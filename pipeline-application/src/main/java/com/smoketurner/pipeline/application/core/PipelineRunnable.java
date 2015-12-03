@@ -29,9 +29,12 @@ import org.glassfish.jersey.media.sse.OutboundEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.amazonaws.AmazonClientException;
+import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectInputStream;
 import com.amazonaws.services.sqs.model.Message;
+import com.amazonaws.services.sqs.model.OverLimitException;
 import com.amazonaws.services.sqs.model.ReceiveMessageResult;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
@@ -50,9 +53,11 @@ public class PipelineRunnable implements Runnable {
   private static final ObjectMapper MAPPER = Jackson.newObjectMapper();
   private static final OutboundEvent PING_EVENT =
       new OutboundEvent.Builder().name("ping").data("ping").build();
+  private static final long NO_CONNECTIONS_SLEEP_SECS = 1;
+  private static final long SQS_FAILURE_SLEEP_SECS = 10;
 
-  private final AmazonS3Downloader s3;
-  private final AmazonSQSIterator sqs;
+  private final S3Downloader s3;
+  private final SQSIterator sqs;
   private final SseBroadcasterWithCount broadcaster;
 
   // metrics
@@ -68,9 +73,8 @@ public class PipelineRunnable implements Runnable {
    * @param registry Metric Registry
    * @param broadcaster SSE broadcaster
    */
-  public PipelineRunnable(@Nonnull final AmazonS3Downloader s3,
-      @Nonnull final AmazonSQSIterator sqs, @Nonnull final MetricRegistry registry,
-      @Nonnull final SseBroadcasterWithCount broadcaster) {
+  public PipelineRunnable(@Nonnull final S3Downloader s3, @Nonnull final SQSIterator sqs,
+      @Nonnull final MetricRegistry registry, @Nonnull final SseBroadcasterWithCount broadcaster) {
 
     this.s3 = Preconditions.checkNotNull(s3);
     this.sqs = Preconditions.checkNotNull(sqs);
@@ -89,18 +93,41 @@ public class PipelineRunnable implements Runnable {
       // send heartbeat ping event to all connections to flush out disconnected clients
       broadcaster.broadcast(PING_EVENT);
       pingRate.mark();
+      LOGGER.trace("sent ping event");
 
-      if (broadcaster.size() < 1) {
+      // if we don't have any connections, sleep then continue the main processing loop
+      if (broadcaster.isEmpty()) {
         try {
           LOGGER.info("No active connections found, sleeping for 1 second");
-          TimeUnit.SECONDS.sleep(1);
+          TimeUnit.SECONDS.sleep(NO_CONNECTIONS_SLEEP_SECS);
           continue;
         } catch (InterruptedException e) {
           Thread.currentThread().interrupt();
         }
       }
 
-      final ReceiveMessageResult result = sqs.next();
+      // Request new messages from SQS and continue the loop upon failure
+      final ReceiveMessageResult result;
+      try {
+        result = sqs.next();
+      } catch (OverLimitException e) {
+        LOGGER.error("Reached in-flight receiveMessage() request limit, sleeping for 10 seconds",
+            e);
+
+        try {
+          TimeUnit.SECONDS.sleep(SQS_FAILURE_SLEEP_SECS);
+        } catch (InterruptedException ex) {
+          Thread.currentThread().interrupt();
+        }
+        continue;
+      } catch (AmazonServiceException e) {
+        LOGGER.error("Failed to request messages from SQS", e);
+        continue;
+      } catch (AmazonClientException e) {
+        LOGGER.error("Failed to request messages from SQS", e);
+        continue;
+      }
+
       for (Message message : result.getMessages()) {
         if (LOGGER.isTraceEnabled()) {
           LOGGER.trace("Received SQS message: {}", message);
@@ -108,7 +135,7 @@ public class PipelineRunnable implements Runnable {
           LOGGER.debug("Received SQS message: {}", message.getMessageId());
         }
 
-        if (broadcaster.size() < 1) {
+        if (broadcaster.isEmpty()) {
           LOGGER.debug("No connections found, skipping SQS message processing");
           break;
         }
@@ -118,6 +145,7 @@ public class PipelineRunnable implements Runnable {
           notification = MAPPER.readValue(message.getBody(), AmazonSNSNotification.class);
         } catch (IOException e) {
           LOGGER.error("Failed to parse SNS notification", e);
+          sqs.deleteMessage(message);
           continue;
         }
 
@@ -128,6 +156,7 @@ public class PipelineRunnable implements Runnable {
           records = MAPPER.readValue(notification.getMessage(), AmazonEventRecords.class);
         } catch (IOException e) {
           LOGGER.error("Failed to parse S3 event records", e);
+          sqs.deleteMessage(message);
           continue;
         }
 
@@ -137,13 +166,22 @@ public class PipelineRunnable implements Runnable {
         LOGGER.debug("Parsed {} event records from S3", recordCount);
         this.recordCounts.update(recordCount);
 
+        if (recordCount < 1) {
+          LOGGER.debug("No records found in SQS message, deleting");
+          sqs.deleteMessage(message);
+          continue;
+        }
+
         boolean fullyProcessed = false;
+        int recordsProcessed = 0;
 
         for (AmazonEventRecord record : records.getRecords()) {
-          if (broadcaster.size() < 1) {
+          if (broadcaster.isEmpty()) {
             LOGGER.debug("No connections found, not downloading from S3");
             break;
           }
+
+          recordsProcessed++;
 
           final S3Object download;
           try {
@@ -157,7 +195,7 @@ public class PipelineRunnable implements Runnable {
             final AtomicLong eventCount = new AtomicLong(0L);
 
             final BufferedReader reader;
-            if (AmazonS3Downloader.isGZipped(download)) {
+            if (S3Downloader.isGZipped(download)) {
               reader = new BufferedReader(new InputStreamReader(new StreamingGZIPInputStream(input),
                   StandardCharsets.UTF_8));
             } else {
@@ -181,9 +219,11 @@ public class PipelineRunnable implements Runnable {
               eventRate.mark();
 
               // If we have no active connections, assume the broadcast failed
-              if (broadcaster.size() < 1) {
+              if (broadcaster.isEmpty()) {
                 LOGGER.error("No connections found, aborting download");
                 broadcastFailure = true;
+                // abort the current S3 download
+                input.abort();
                 break;
               }
             }
@@ -203,6 +243,12 @@ public class PipelineRunnable implements Runnable {
             fullyProcessed = false;
             break;
           }
+        }
+
+        // if we've processed all of the records, which includes skipping over empty S3 files, the
+        // message has been fully processed.
+        if (recordsProcessed == recordCount) {
+          fullyProcessed = true;
         }
 
         // If all of the S3 event notifications in a given SQS message have been processed, it is

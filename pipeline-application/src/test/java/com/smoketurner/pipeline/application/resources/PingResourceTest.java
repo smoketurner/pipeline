@@ -18,14 +18,13 @@ import io.dropwizard.testing.junit.ResourceTestRule;
 import javax.ws.rs.core.Response;
 import org.junit.ClassRule;
 import org.junit.Test;
-
 import com.smoketurner.pipeline.application.resources.PingResource;
 
 public class PingResourceTest {
 
   @ClassRule
-  public static final ResourceTestRule resources = ResourceTestRule.builder()
-      .addResource(new PingResource()).build();
+  public static final ResourceTestRule resources =
+      ResourceTestRule.builder().addResource(new PingResource()).build();
 
   @Test
   public void testGetPing() throws Exception {

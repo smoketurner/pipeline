@@ -19,13 +19,10 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.ServiceUnavailableException;
-
 import org.glassfish.jersey.media.sse.EventOutput;
 import org.glassfish.jersey.media.sse.SseFeature;
-
 import com.google.common.base.Preconditions;
 import com.smoketurner.pipeline.application.core.SseBroadcasterWithCount;
-
 import io.dropwizard.util.Duration;
 import io.swagger.annotations.Api;
 

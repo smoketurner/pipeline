@@ -14,9 +14,7 @@
 package com.smoketurner.pipeline.application.core;
 
 import java.util.Objects;
-
 import javax.annotation.concurrent.Immutable;
-
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;

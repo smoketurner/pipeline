@@ -16,17 +16,14 @@ package com.smoketurner.pipeline.client;
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.URI;
-
 import javax.annotation.Nonnull;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.UriBuilder;
-
 import org.glassfish.jersey.media.sse.EventSource;
 import org.glassfish.jersey.media.sse.SseFeature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import com.google.common.base.Preconditions;
 
 public class PipelineClient implements Closeable {

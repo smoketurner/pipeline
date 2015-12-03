@@ -14,11 +14,8 @@
 package com.smoketurner.pipeline.application.aws;
 
 import java.util.Objects;
-
 import javax.annotation.concurrent.Immutable;
-
 import org.joda.time.DateTime;
-
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;

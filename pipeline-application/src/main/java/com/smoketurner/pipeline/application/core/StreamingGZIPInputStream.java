@@ -16,9 +16,7 @@ package com.smoketurner.pipeline.application.core;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.zip.GZIPInputStream;
-
 import javax.annotation.Nonnull;
-
 import com.google.common.base.Preconditions;
 
 public final class StreamingGZIPInputStream extends GZIPInputStream {

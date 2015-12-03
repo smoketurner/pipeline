@@ -14,14 +14,10 @@
 package com.smoketurner.pipeline.application.core;
 
 import static com.codahale.metrics.MetricRegistry.name;
-
 import java.util.Iterator;
-
 import javax.annotation.Nonnull;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import com.amazonaws.services.sqs.AmazonSQSClient;
 import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
@@ -31,14 +27,16 @@ import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.google.common.base.Preconditions;
 
-public class AmazonSQSIterator implements Iterator<ReceiveMessageResult> {
+public class SQSIterator implements Iterator<ReceiveMessageResult> {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(AmazonSQSIterator.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(SQSIterator.class);
   private static final int MAX_NUMBER_OF_MESSAGES = 10;
   private static final int VISIBILITY_TIMEOUT_SECS = 10;
   private static final int WAIT_TIME_SECS = 20;
   private final AmazonSQSClient client;
   private final String queueUrl;
+
+  // metrics
   private final Counter receiveRequests;
   private final Counter deleteRequests;
   private final Histogram messageCounts;
@@ -50,15 +48,15 @@ public class AmazonSQSIterator implements Iterator<ReceiveMessageResult> {
    * @param client SQS client
    * @param queueUrl Queue URL
    */
-  public AmazonSQSIterator(@Nonnull final AmazonSQSClient client, @Nonnull final String queueUrl,
+  public SQSIterator(@Nonnull final AmazonSQSClient client, @Nonnull final String queueUrl,
       @Nonnull final MetricRegistry registry) {
     Preconditions.checkNotNull(registry);
     this.client = Preconditions.checkNotNull(client);
     this.queueUrl = Preconditions.checkNotNull(queueUrl);
 
-    this.receiveRequests = registry.counter(name(AmazonSQSIterator.class, "receive-requests"));
-    this.deleteRequests = registry.counter(name(AmazonSQSIterator.class, "delete-requests"));
-    this.messageCounts = registry.histogram(name(AmazonSQSIterator.class, "message-counts"));
+    this.receiveRequests = registry.counter(name(SQSIterator.class, "receive-requests"));
+    this.deleteRequests = registry.counter(name(SQSIterator.class, "delete-requests"));
+    this.messageCounts = registry.histogram(name(SQSIterator.class, "message-counts"));
 
     this.request =
         new ReceiveMessageRequest(queueUrl).withMaxNumberOfMessages(MAX_NUMBER_OF_MESSAGES)

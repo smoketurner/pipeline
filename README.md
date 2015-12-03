@@ -5,7 +5,7 @@ Pipeline
 [![Maven Central](https://img.shields.io/maven-central/v/com.smoketurner.pipeline/notification-parent.svg?style=flat-square)](https://maven-badges.herokuapp.com/maven-central/com.smoketurner.pipeline/pipeline-parent/)
 [![GitHub license](https://img.shields.io/github/license/smoketurner/pipeline.svg?style=flat-square)](https://github.com/smoketurner/pipeline/tree/master)
 
-Pipeline is an implementation of an event pipeline using [Amazon Web Services](https://aws.amazon.com) (AWS) [Simple Storage Service](http://aws.amazon.com/s3/) (S3) and [Simple Queue Service](http://aws.amazon.com/sqs/) (SQS). S3 can be configured to publish a notification to the [Simple Notification Service](http://aws.amazon.com/sns/) (SNS) whenever a new object is created in a bucket. SNS can then publish the notification into an SQS queue which Pipeline will consume from. Pipeline will consume from the SQS queue, then download the object from S3, decompress it, then emit each line of data over a [server-sent events](https://en.wikipedia.org/wiki/Server-sent_events) (SSE) HTTP endpoint.
+Pipeline is an implementation of an event pipeline using [Amazon Web Services](https://aws.amazon.com) (AWS) [Simple Storage Service](http://aws.amazon.com/s3/) (S3) and [Simple Queue Service](http://aws.amazon.com/sqs/) (SQS). S3 can be configured to publish a notification to the [Simple Notification Service](http://aws.amazon.com/sns/) (SNS) whenever a new object is created in a bucket. SNS can then publish the notification into an SQS queue which Pipeline will consume from. Pipeline will consume from the SQS queue, then download the object from S3, optionally decompress it, then emit each line of data over a [server-sent events](https://en.wikipedia.org/wiki/Server-sent_events) (SSE) HTTP endpoint.
 
 Installation
 ------------
@@ -28,35 +28,24 @@ To deploy the Pipeline service into production, it can safely sit behind any HTT
 
 Usage
 -----
-The Pipeline service provides RESTful URLs when creating, retrieving and deleting notifications. All of the API paths are in the form of `/v1/notifications/<username>`. In the following examples, we'll be using `test` as the username.
+The Pipeline service provides RESTful URLs for consuming events.
 
 API documentation is also available via [Swagger](http://swagger.io) at `http://localhost:8080/swagger`.
 
 ### Retrieving events
 
 ```
-curl -X GET http://localhost:8080/v1/events -i
-
+curl -X GET localhost:8080/v1/events -i
 HTTP/1.1 200 OK
-Date: Sun, 26 Jul 2015 16:12:11 GMT
-Last-Modified: Sun, 26 Jul 2015 16:06:10 GMT
-Content-Type: application/json;charset=UTF-8
-Request-Id: ce32a162-483d-4c34-9524-02b7f667704f
-Cache-Control: no-cache, no-store, no-transform, must-revalidate
-Content-Length: 190
+Date: Thu, 03 Dec 2015 20:22:25 GMT
+Content-Type: text/event-stream
+Transfer-Encoding: chunked
 
-[
-  {
-    "id": 625336317638742016,
-    "id_str": "625336317638742016",
-    "category": "new-follower",
-    "message": "You have a new follower",
-    "created_at": "2015-07-26T16:06:10.970Z",
-    "unseen": true,
-    "properties": {}
-  }
-]
+event: ping
+data: ping
 ```
+
+As messages are published into the SQS queue as new files are uploaded to S3, Pipeline will consume the SQS messages, download the S3 files, and publish the events over the HTTP connection.
 
 Support
 -------

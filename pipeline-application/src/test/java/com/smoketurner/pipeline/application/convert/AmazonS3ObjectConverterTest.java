@@ -14,13 +14,10 @@
 package com.smoketurner.pipeline.application.convert;
 
 import static org.assertj.core.api.Assertions.assertThat;
-
 import org.junit.Test;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.smoketurner.pipeline.application.aws.AmazonEventRecord;
 import com.smoketurner.pipeline.application.core.AmazonS3Object;
-
 import io.dropwizard.testing.FixtureHelpers;
 
 public class AmazonS3ObjectConverterTest {

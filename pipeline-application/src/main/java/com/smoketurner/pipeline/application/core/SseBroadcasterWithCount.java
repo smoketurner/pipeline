@@ -14,8 +14,6 @@
 package com.smoketurner.pipeline.application.core;
 
 import java.util.concurrent.atomic.AtomicInteger;
-
-import org.glassfish.jersey.media.sse.EventOutput;
 import org.glassfish.jersey.media.sse.OutboundEvent;
 import org.glassfish.jersey.media.sse.SseBroadcaster;
 import org.glassfish.jersey.server.ChunkedOutput;
@@ -27,7 +25,8 @@ public class SseBroadcasterWithCount extends SseBroadcaster {
   private static final Logger LOGGER = LoggerFactory.getLogger(SseBroadcasterWithCount.class);
   private final AtomicInteger connectionCounter = new AtomicInteger(0);
 
-  public boolean add(final EventOutput chunkedOutput) {
+  @Override
+  public <OUT extends ChunkedOutput<OutboundEvent>> boolean add(final OUT chunkedOutput) {
     if (chunkedOutput.isClosed()) {
       return false;
     }
@@ -46,7 +45,7 @@ public class SseBroadcasterWithCount extends SseBroadcaster {
     LOGGER.debug("Closed connection ({} total)", active);
   }
 
-  public int size() {
-    return connectionCounter.get();
+  public boolean isEmpty() {
+    return connectionCounter.get() < 1;
   }
 }

@@ -15,9 +15,7 @@ package com.smoketurner.pipeline.application.config;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
-
 import com.fasterxml.jackson.annotation.JsonProperty;
-
 import io.dropwizard.Configuration;
 import io.federecio.dropwizard.swagger.SwaggerBundleConfiguration;
 
@@ -25,13 +23,11 @@ public class PipelineConfiguration extends Configuration {
 
   @Valid
   @NotNull
-  @JsonProperty
-  public final AwsConfiguration aws = new AwsConfiguration();
+  private final AwsConfiguration aws = new AwsConfiguration();
 
   @Valid
   @NotNull
-  @JsonProperty
-  public final SwaggerBundleConfiguration swagger = new SwaggerBundleConfiguration();
+  private final SwaggerBundleConfiguration swagger = new SwaggerBundleConfiguration();
 
   @JsonProperty
   public AwsConfiguration getAws() {

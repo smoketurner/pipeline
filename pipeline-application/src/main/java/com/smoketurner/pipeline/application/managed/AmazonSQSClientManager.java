@@ -14,10 +14,8 @@
 package com.smoketurner.pipeline.application.managed;
 
 import javax.annotation.Nonnull;
-
 import com.amazonaws.services.sqs.AmazonSQSClient;
 import com.google.common.base.Preconditions;
-
 import io.dropwizard.lifecycle.Managed;
 
 public class AmazonSQSClientManager implements Managed {

@@ -1,16 +1,13 @@
 package com.smoketurner.pipeline.client;
 
 import static org.assertj.core.api.Assertions.assertThat;
-
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.client.ClientBuilder;
-
 import org.glassfish.jersey.media.sse.EventListener;
 import org.glassfish.jersey.media.sse.EventOutput;
 import org.glassfish.jersey.media.sse.EventSource;
@@ -21,7 +18,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
-
 import io.dropwizard.testing.junit.DropwizardClientRule;
 
 public class PIpelineClientTest {
