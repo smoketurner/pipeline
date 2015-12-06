@@ -106,4 +106,9 @@ public class SQSIterator implements Iterator<ReceiveMessageResult> {
     }
     return false;
   }
+
+  @Override
+  public void remove() {
+    throw new UnsupportedOperationException("remove");
+  }
 }
