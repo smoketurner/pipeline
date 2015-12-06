@@ -14,9 +14,12 @@
 package com.smoketurner.pipeline.application.aws;
 
 import static org.assertj.core.api.Assertions.assertThat;
+
 import org.junit.Before;
 import org.junit.Test;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import io.dropwizard.jackson.Jackson;
 import io.dropwizard.testing.FixtureHelpers;
 
@@ -29,7 +32,7 @@ public class AmazonEventRecordTest {
     final AmazonEventRecordS3Bucket bucket = new AmazonEventRecordS3Bucket("bucket-name");
     final AmazonEventRecordS3Object object = new AmazonEventRecordS3Object("object-key", 100,
         "object eTag", "object version", "event sequence");
-    final AmazonEventRecordS3 s3 = new AmazonEventRecordS3("1.0", bucket, object);
+    final AmazonEventRecordS3 s3 = new AmazonEventRecordS3(bucket, object);
     record = new AmazonEventRecord("2.0", "aws:s3", "us-east-1", "1970-01-01T00:00:00.000Z",
         "event-type", s3);
   }

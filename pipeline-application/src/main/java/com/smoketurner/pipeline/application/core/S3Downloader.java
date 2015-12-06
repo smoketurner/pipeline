@@ -14,14 +14,17 @@
 package com.smoketurner.pipeline.application.core;
 
 import javax.annotation.Nonnull;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.S3Object;
 import com.google.common.base.Preconditions;
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.smoketurner.pipeline.application.aws.AmazonEventRecord;
 import com.smoketurner.pipeline.application.convert.AmazonS3ObjectConverter;
@@ -50,7 +53,7 @@ public class S3Downloader {
    * @return S3 object
    * @throws Exception if unable to download the object
    */
-  public S3Object fetch(final AmazonEventRecord record) throws Exception {
+  public S3Object fetch(@Nonnull final AmazonEventRecord record) throws Exception {
     final AmazonS3Object object = converter.convert(record);
     if (object == null) {
       throw new Exception("Failed to convert event record");
@@ -101,10 +104,17 @@ public class S3Downloader {
    * @return true if the file is gzipped, otherwise false
    */
   public static boolean isGZipped(final S3Object object) {
-    final String encoding = object.getObjectMetadata().getContentEncoding();
-    if (GZIP_ENCODING.equalsIgnoreCase(encoding)) {
+    if (object == null) {
+      return false;
+    }
+
+    final String encoding = Strings.nullToEmpty(object.getObjectMetadata().getContentEncoding());
+    if (GZIP_ENCODING.equalsIgnoreCase(encoding.trim())) {
       return true;
-    } else if (object.getKey().endsWith(GZIP_EXTENSION)) {
+    }
+
+    final String key = Strings.nullToEmpty(object.getKey());
+    if (key.trim().toLowerCase().endsWith(GZIP_EXTENSION)) {
       return true;
     }
     return false;

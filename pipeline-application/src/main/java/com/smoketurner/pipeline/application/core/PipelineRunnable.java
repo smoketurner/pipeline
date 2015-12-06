@@ -149,7 +149,11 @@ public class PipelineRunnable implements Runnable {
           continue;
         }
 
-        LOGGER.trace("Parsed SNS notification: {}", notification);
+        if (LOGGER.isTraceEnabled()) {
+          LOGGER.trace("Parsed SNS notification: {}", notification);
+        } else if (LOGGER.isDebugEnabled()) {
+          LOGGER.debug("SNS notification created at: {}", notification.getTimestamp());
+        }
 
         final AmazonEventRecords records;
         try {

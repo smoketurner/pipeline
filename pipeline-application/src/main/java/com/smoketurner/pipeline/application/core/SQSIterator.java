@@ -14,10 +14,14 @@
 package com.smoketurner.pipeline.application.core;
 
 import static com.codahale.metrics.MetricRegistry.name;
+
 import java.util.Iterator;
+
 import javax.annotation.Nonnull;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import com.amazonaws.services.sqs.AmazonSQSClient;
 import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;

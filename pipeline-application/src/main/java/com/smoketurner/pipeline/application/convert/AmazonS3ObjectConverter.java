@@ -34,7 +34,7 @@ public class AmazonS3ObjectConverter extends Converter<AmazonEventRecord, Amazon
     final AmazonEventRecordS3Bucket bucket = new AmazonEventRecordS3Bucket(b.getBucketName());
     final AmazonEventRecordS3Object object = new AmazonEventRecordS3Object(b.getKey(), b.getSize(),
         b.getETag().orNull(), b.getVersionId().orNull(), null);
-    final AmazonEventRecordS3 s3 = new AmazonEventRecordS3(null, bucket, object);
+    final AmazonEventRecordS3 s3 = new AmazonEventRecordS3(bucket, object);
     return new AmazonEventRecord(null, null, null, null, null, s3);
   }
 }
