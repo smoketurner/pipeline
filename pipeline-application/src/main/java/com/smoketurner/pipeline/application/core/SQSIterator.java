@@ -92,6 +92,10 @@ public class SQSIterator implements Iterator<ReceiveMessageResult> {
    * @return true if the delete was successful, otherwise false
    */
   public boolean deleteMessage(final Message message) {
+    if (message == null) {
+      return false;
+    }
+
     try {
       LOGGER.debug("Deleting message from SQS: {}", message.getMessageId());
       deleteRequests.inc();
