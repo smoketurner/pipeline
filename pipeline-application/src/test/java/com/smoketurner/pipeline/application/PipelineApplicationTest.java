@@ -24,19 +24,16 @@ import org.junit.Test;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.health.HealthCheckRegistry;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.smoketurner.pipeline.application.config.PipelineConfiguration;
 import com.smoketurner.pipeline.application.resources.PingResource;
 import com.smoketurner.pipeline.application.resources.VersionResource;
 
-import io.dropwizard.jackson.Jackson;
 import io.dropwizard.jersey.setup.JerseyEnvironment;
 import io.dropwizard.lifecycle.setup.LifecycleEnvironment;
 import io.dropwizard.setup.Environment;
 
 public class PipelineApplicationTest {
   private final MetricRegistry registry = new MetricRegistry();
-  private final ObjectMapper mapper = Jackson.newObjectMapper();
   private final Environment environment = mock(Environment.class);
   private final JerseyEnvironment jersey = mock(JerseyEnvironment.class);
   private final LifecycleEnvironment lifecycle = mock(LifecycleEnvironment.class);
@@ -46,9 +43,9 @@ public class PipelineApplicationTest {
 
   @Before
   public void setup() throws Exception {
+    config.getAws().setQueueUrl("https://sqs.us-east-1.amazonaws.com/1234/test-queue");
     when(environment.metrics()).thenReturn(registry);
     when(environment.jersey()).thenReturn(jersey);
-    when(environment.getObjectMapper()).thenReturn(mapper);
     when(environment.lifecycle()).thenReturn(lifecycle);
     when(environment.healthChecks()).thenReturn(healthChecks);
   }
