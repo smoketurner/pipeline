@@ -34,6 +34,8 @@ import com.smoketurner.pipeline.application.aws.AmazonEventRecord;
 import com.smoketurner.pipeline.application.aws.AmazonEventRecordS3;
 import com.smoketurner.pipeline.application.aws.AmazonEventRecordS3Bucket;
 import com.smoketurner.pipeline.application.aws.AmazonEventRecordS3Object;
+import com.smoketurner.pipeline.application.exceptions.AmazonS3ConstraintException;
+import com.smoketurner.pipeline.application.exceptions.AmazonS3ZeroSizeException;
 
 public class AmazonS3DownloaderTest {
 
@@ -57,9 +59,8 @@ public class AmazonS3DownloaderTest {
   public void testFetchNull() throws Exception {
     try {
       downloader.fetch(null);
-      failBecauseExceptionWasNotThrown(Exception.class);
-    } catch (Exception e) {
-      assertThat(e.getMessage()).isEqualTo("Failed to convert event record");
+      failBecauseExceptionWasNotThrown(NullPointerException.class);
+    } catch (NullPointerException e) {
     }
   }
 
@@ -84,9 +85,8 @@ public class AmazonS3DownloaderTest {
     try {
       final S3Object download = downloader.fetch(record);
       assertThat(download).isNull();
-      failBecauseExceptionWasNotThrown(Exception.class);
-    } catch (Exception e) {
-      assertThat(e.getMessage()).isEqualTo("eTag from object did not match");
+      failBecauseExceptionWasNotThrown(AmazonS3ConstraintException.class);
+    } catch (AmazonS3ConstraintException e) {
     }
     verify(mockS3).getObject(any(GetObjectRequest.class));
   }
@@ -102,9 +102,8 @@ public class AmazonS3DownloaderTest {
     try {
       final S3Object download = downloader.fetch(record);
       assertThat(download).isNotNull();
-      failBecauseExceptionWasNotThrown(Exception.class);
-    } catch (Exception e) {
-      assertThat(e.getMessage()).isEqualTo("Object size is zero");
+      failBecauseExceptionWasNotThrown(AmazonS3ZeroSizeException.class);
+    } catch (AmazonS3ZeroSizeException e) {
     }
     verify(mockS3).getObject(any(GetObjectRequest.class));
   }
