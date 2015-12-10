@@ -14,18 +14,21 @@
 package com.smoketurner.pipeline.application;
 
 import java.util.concurrent.ExecutorService;
+
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.sqs.AmazonSQSClient;
 import com.codahale.metrics.MetricRegistry;
 import com.smoketurner.pipeline.application.config.AwsConfiguration;
 import com.smoketurner.pipeline.application.config.PipelineConfiguration;
+import com.smoketurner.pipeline.application.core.InstrumentedSseBroadcaster;
+import com.smoketurner.pipeline.application.core.MessageProcessor;
 import com.smoketurner.pipeline.application.core.PipelineRunnable;
-import com.smoketurner.pipeline.application.core.S3Downloader;
-import com.smoketurner.pipeline.application.core.SQSIterator;
-import com.smoketurner.pipeline.application.core.SseBroadcasterWithCount;
+import com.smoketurner.pipeline.application.core.AmazonS3Downloader;
+import com.smoketurner.pipeline.application.core.AmazonSQSIterator;
 import com.smoketurner.pipeline.application.resources.EventResource;
 import com.smoketurner.pipeline.application.resources.PingResource;
 import com.smoketurner.pipeline.application.resources.VersionResource;
+
 import io.dropwizard.Application;
 import io.dropwizard.configuration.EnvironmentVariableSubstitutor;
 import io.dropwizard.configuration.SubstitutingSourceProvider;
@@ -71,16 +74,17 @@ public class PipelineApplication extends Application<PipelineConfiguration> {
     final AmazonS3Client s3 = awsConfig.buildS3(environment);
     final AmazonSQSClient sqs = awsConfig.buildSQS(environment);
 
-    final SQSIterator sqsIterator = new SQSIterator(sqs, awsConfig.getQueueUrl(), registry);
-    final S3Downloader s3Downloader = new S3Downloader(s3);
+    final AmazonSQSIterator sqsIterator = new AmazonSQSIterator(sqs, awsConfig.getQueueUrl(), registry);
+    final AmazonS3Downloader s3Downloader = new AmazonS3Downloader(s3);
 
-    final SseBroadcasterWithCount broadcaster = new SseBroadcasterWithCount();
+    final InstrumentedSseBroadcaster broadcaster = new InstrumentedSseBroadcaster(registry);
+
+    final MessageProcessor processor = new MessageProcessor(registry, s3Downloader, broadcaster);
 
     final ExecutorService service =
         environment.lifecycle().executorService("sqs-%d").minThreads(1).build();
 
-    final PipelineRunnable runnable =
-        new PipelineRunnable(s3Downloader, sqsIterator, registry, broadcaster);
+    final PipelineRunnable runnable = new PipelineRunnable(processor, sqsIterator, broadcaster);
     service.execute(runnable);
 
     // resources

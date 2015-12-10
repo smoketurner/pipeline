@@ -35,10 +35,10 @@ import com.smoketurner.pipeline.application.aws.AmazonEventRecordS3;
 import com.smoketurner.pipeline.application.aws.AmazonEventRecordS3Bucket;
 import com.smoketurner.pipeline.application.aws.AmazonEventRecordS3Object;
 
-public class S3DownloaderTest {
+public class AmazonS3DownloaderTest {
 
   private final AmazonS3Client mockS3 = mock(AmazonS3Client.class);
-  private final S3Downloader downloader = new S3Downloader(mockS3);
+  private final AmazonS3Downloader downloader = new AmazonS3Downloader(mockS3);
   private AmazonEventRecord record;
 
   @Before
@@ -137,34 +137,34 @@ public class S3DownloaderTest {
 
   @Test
   public void testIsGzipped() {
-    assertThat(S3Downloader.isGZipped(null)).isFalse();
+    assertThat(AmazonS3Downloader.isGZipped(null)).isFalse();
 
     final S3Object object = new S3Object();
-    assertThat(S3Downloader.isGZipped(object)).isFalse();
+    assertThat(AmazonS3Downloader.isGZipped(object)).isFalse();
 
     final ObjectMetadata metadata = object.getObjectMetadata();
     metadata.setContentEncoding("gzip");
-    assertThat(S3Downloader.isGZipped(object)).isTrue();
+    assertThat(AmazonS3Downloader.isGZipped(object)).isTrue();
 
     metadata.setContentEncoding("GZIP");
-    assertThat(S3Downloader.isGZipped(object)).isTrue();
+    assertThat(AmazonS3Downloader.isGZipped(object)).isTrue();
 
     metadata.setContentEncoding(" GzIP ");
-    assertThat(S3Downloader.isGZipped(object)).isTrue();
+    assertThat(AmazonS3Downloader.isGZipped(object)).isTrue();
 
     metadata.setContentEncoding(null);
 
     object.setKey("test");
-    assertThat(S3Downloader.isGZipped(object)).isFalse();
+    assertThat(AmazonS3Downloader.isGZipped(object)).isFalse();
 
     object.setKey("test.gz");
-    assertThat(S3Downloader.isGZipped(object)).isTrue();
+    assertThat(AmazonS3Downloader.isGZipped(object)).isTrue();
 
     object.setKey("test.gz   ");
-    assertThat(S3Downloader.isGZipped(object)).isTrue();
+    assertThat(AmazonS3Downloader.isGZipped(object)).isTrue();
 
     object.setKey("test.GZ ");
-    assertThat(S3Downloader.isGZipped(object)).isTrue();
+    assertThat(AmazonS3Downloader.isGZipped(object)).isTrue();
   }
 
 }

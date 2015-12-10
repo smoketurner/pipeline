@@ -22,7 +22,7 @@ import javax.ws.rs.ServiceUnavailableException;
 import org.glassfish.jersey.media.sse.EventOutput;
 import org.glassfish.jersey.media.sse.SseFeature;
 import com.google.common.base.Preconditions;
-import com.smoketurner.pipeline.application.core.SseBroadcasterWithCount;
+import com.smoketurner.pipeline.application.core.InstrumentedSseBroadcaster;
 import io.dropwizard.util.Duration;
 import io.swagger.annotations.Api;
 
@@ -32,14 +32,14 @@ import io.swagger.annotations.Api;
 public class EventResource {
 
   private static final Duration RETRY_AFTER = Duration.seconds(5);
-  private final SseBroadcasterWithCount broadcaster;
+  private final InstrumentedSseBroadcaster broadcaster;
 
   /**
    * Constructor
    *
    * @param broadcaster SSE broadcaster
    */
-  public EventResource(@Nonnull final SseBroadcasterWithCount broadcaster) {
+  public EventResource(@Nonnull final InstrumentedSseBroadcaster broadcaster) {
     this.broadcaster = Preconditions.checkNotNull(broadcaster);
   }
 

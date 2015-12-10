@@ -20,6 +20,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.List;
+
 import org.junit.Test;
 
 import com.amazonaws.AmazonServiceException;
@@ -29,11 +31,11 @@ import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import com.amazonaws.services.sqs.model.ReceiveMessageResult;
 import com.codahale.metrics.MetricRegistry;
 
-public class SQSIteratorTest {
+public class AmazonSQSIteratorTest {
 
   private static final String QUEUE_URL = "http://sqs/test";
   private final AmazonSQSClient mockSQS = mock(AmazonSQSClient.class);
-  private final SQSIterator iterator = new SQSIterator(mockSQS, QUEUE_URL, new MetricRegistry());
+  private final AmazonSQSIterator iterator = new AmazonSQSIterator(mockSQS, QUEUE_URL, new MetricRegistry());
 
   @Test
   public void testHasNext() throws Exception {
@@ -44,8 +46,8 @@ public class SQSIteratorTest {
   public void testNext() throws Exception {
     final ReceiveMessageResult expected = new ReceiveMessageResult();
     when(mockSQS.receiveMessage(any(ReceiveMessageRequest.class))).thenReturn(expected);
-    final ReceiveMessageResult actual = iterator.next();
-    assertThat(actual).isEqualTo(expected);
+    final List<Message> actual = iterator.next();
+    assertThat(actual).isEqualTo(expected.getMessages());
   }
 
   @Test

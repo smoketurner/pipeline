@@ -16,8 +16,10 @@ package com.smoketurner.pipeline.application.core;
 import static com.codahale.metrics.MetricRegistry.name;
 
 import java.util.Iterator;
+import java.util.List;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,9 +33,9 @@ import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.google.common.base.Preconditions;
 
-public class SQSIterator implements Iterator<ReceiveMessageResult> {
+public class AmazonSQSIterator implements Iterator<List<Message>> {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(SQSIterator.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(AmazonSQSIterator.class);
   private static final int MAX_NUMBER_OF_MESSAGES = 10;
   private static final int VISIBILITY_TIMEOUT_SECS = 10;
   private static final int WAIT_TIME_SECS = 20;
@@ -52,15 +54,15 @@ public class SQSIterator implements Iterator<ReceiveMessageResult> {
    * @param client SQS client
    * @param queueUrl Queue URL
    */
-  public SQSIterator(@Nonnull final AmazonSQSClient client, @Nonnull final String queueUrl,
+  public AmazonSQSIterator(@Nonnull final AmazonSQSClient client, @Nonnull final String queueUrl,
       @Nonnull final MetricRegistry registry) {
     Preconditions.checkNotNull(registry);
     this.client = Preconditions.checkNotNull(client);
     this.queueUrl = Preconditions.checkNotNull(queueUrl);
 
-    this.receiveRequests = registry.counter(name(SQSIterator.class, "receive-requests"));
-    this.deleteRequests = registry.counter(name(SQSIterator.class, "delete-requests"));
-    this.messageCounts = registry.histogram(name(SQSIterator.class, "message-counts"));
+    this.receiveRequests = registry.counter(name(AmazonSQSIterator.class, "receive-requests"));
+    this.deleteRequests = registry.counter(name(AmazonSQSIterator.class, "delete-requests"));
+    this.messageCounts = registry.histogram(name(AmazonSQSIterator.class, "message-counts"));
 
     this.request =
         new ReceiveMessageRequest(queueUrl).withMaxNumberOfMessages(MAX_NUMBER_OF_MESSAGES)
@@ -75,14 +77,15 @@ public class SQSIterator implements Iterator<ReceiveMessageResult> {
   }
 
   @Override
-  public ReceiveMessageResult next() {
-    LOGGER.debug("Requesting {} messages from SQS", MAX_NUMBER_OF_MESSAGES);
+  public List<Message> next() {
+    LOGGER.debug("Requesting {} messages from SQS (wait time={}, visibility timeout={})",
+        MAX_NUMBER_OF_MESSAGES, WAIT_TIME_SECS, VISIBILITY_TIMEOUT_SECS);
     receiveRequests.inc();
     final ReceiveMessageResult result = client.receiveMessage(request);
     final int numMessages = result.getMessages().size();
     LOGGER.debug("Received {} messages from SQS", numMessages);
     messageCounts.update(numMessages);
-    return result;
+    return result.getMessages();
   }
 
   /**
@@ -91,7 +94,7 @@ public class SQSIterator implements Iterator<ReceiveMessageResult> {
    * @param messageHandle Message handle to delete
    * @return true if the delete was successful, otherwise false
    */
-  public boolean deleteMessage(final Message message) {
+  public boolean deleteMessage(@Nullable final Message message) {
     if (message == null) {
       return false;
     }

@@ -13,6 +13,8 @@
  */
 package com.smoketurner.pipeline.application.core;
 
+import java.io.IOException;
+
 import javax.annotation.Nonnull;
 
 import org.slf4j.Logger;
@@ -28,10 +30,12 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.smoketurner.pipeline.application.aws.AmazonEventRecord;
 import com.smoketurner.pipeline.application.convert.AmazonS3ObjectConverter;
+import com.smoketurner.pipeline.application.exceptions.AmazonS3ConstraintException;
+import com.smoketurner.pipeline.application.exceptions.AmazonS3ZeroSizeException;
 
-public class S3Downloader {
+public class AmazonS3Downloader {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(S3Downloader.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(AmazonS3Downloader.class);
   private static final String GZIP_ENCODING = "gzip";
   private static final String GZIP_EXTENSION = ".gz";
   private final AmazonS3ObjectConverter converter = new AmazonS3ObjectConverter();
@@ -42,7 +46,7 @@ public class S3Downloader {
    *
    * @param s3 Amazon S3 client
    */
-  public S3Downloader(@Nonnull final AmazonS3Client s3) {
+  public AmazonS3Downloader(@Nonnull final AmazonS3Client s3) {
     this.s3 = Preconditions.checkNotNull(s3);
   }
 
@@ -51,13 +55,12 @@ public class S3Downloader {
    *
    * @param record S3 event notification record to download
    * @return S3 object
-   * @throws Exception if unable to download the object
+   * @throws AmazonS3ConstraintException if the etag constraints weren't met
+   * @throws AmazonS3ZeroSizeException if the file size of the object is zero
    */
-  public S3Object fetch(@Nonnull final AmazonEventRecord record) throws Exception {
-    final AmazonS3Object object = converter.convert(record);
-    if (object == null) {
-      throw new Exception("Failed to convert event record");
-    }
+  public S3Object fetch(@Nonnull final AmazonEventRecord record)
+      throws AmazonS3ConstraintException, AmazonS3ZeroSizeException {
+    final AmazonS3Object object = converter.convert(Preconditions.checkNotNull(record));
 
     LOGGER.debug("Retrieving key: {}", object.getKey());
 
@@ -82,13 +85,19 @@ public class S3Downloader {
 
     if (download == null) {
       LOGGER.error("eTag from object did not match for key: {}", object.getKey());
-      throw new Exception("eTag from object did not match");
+      throw new AmazonS3ConstraintException(object.getKey());
     }
 
     final long contentLength = download.getObjectMetadata().getContentLength();
     if (contentLength < 1) {
-      LOGGER.debug("Object size is zero");
-      throw new Exception("Object size is zero");
+      try {
+        download.close();
+      } catch (IOException e) {
+        LOGGER.error("Failed to close S3 stream for key: {}", object.getKey());
+      }
+
+      LOGGER.debug("Object size is zero for key: {}", object.getKey());
+      throw new AmazonS3ZeroSizeException(object.getKey());
     }
 
     LOGGER.debug("Streaming key ({} bytes): {}", contentLength, download.getKey());

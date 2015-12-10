@@ -13,17 +13,42 @@
  */
 package com.smoketurner.pipeline.application.core;
 
+import static com.codahale.metrics.MetricRegistry.name;
+
 import java.util.concurrent.atomic.AtomicInteger;
+
+import javax.annotation.Nonnull;
+
 import org.glassfish.jersey.media.sse.OutboundEvent;
 import org.glassfish.jersey.media.sse.SseBroadcaster;
 import org.glassfish.jersey.server.ChunkedOutput;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class SseBroadcasterWithCount extends SseBroadcaster {
+import com.codahale.metrics.Meter;
+import com.codahale.metrics.MetricRegistry;
+import com.google.common.base.Preconditions;
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(SseBroadcasterWithCount.class);
+public class InstrumentedSseBroadcaster extends SseBroadcaster {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(InstrumentedSseBroadcaster.class);
+  private static final OutboundEvent PING_EVENT =
+      new OutboundEvent.Builder().name("ping").data("ping").build();
   private final AtomicInteger connectionCounter = new AtomicInteger(0);
+  private final Meter pingRate;
+  private final Meter eventRate;
+
+  /**
+   * Constructor
+   *
+   * @param registry Metric Registry
+   */
+  public InstrumentedSseBroadcaster(@Nonnull final MetricRegistry registry) {
+    super();
+    Preconditions.checkNotNull(registry);
+    this.pingRate = registry.meter(name(SseBroadcaster.class, "broadcast", "ping-sends"));
+    this.eventRate = registry.meter(name(SseBroadcaster.class, "broadcast", "event-sends"));
+  }
 
   @Override
   public <OUT extends ChunkedOutput<OutboundEvent>> boolean add(final OUT chunkedOutput) {
@@ -45,6 +70,27 @@ public class SseBroadcasterWithCount extends SseBroadcaster {
     LOGGER.debug("Closed connection ({} total)", active);
   }
 
+  @Override
+  public void broadcast(OutboundEvent chunk) {
+    super.broadcast(chunk);
+    eventRate.mark();
+    LOGGER.trace("sent event");
+  }
+
+  /**
+   * Send a ping event to all connected consumers
+   */
+  public void ping() {
+    super.broadcast(PING_EVENT);
+    pingRate.mark();
+    LOGGER.trace("sent ping event");
+  }
+
+  /**
+   * Do we have any connections?
+   *
+   * @return true if we have no connections, otherwise false
+   */
   public boolean isEmpty() {
     return connectionCounter.get() < 1;
   }
