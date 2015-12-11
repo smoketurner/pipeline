@@ -15,10 +15,10 @@ package com.smoketurner.pipeline.application.core;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.Optional;
+
 import org.junit.Before;
 import org.junit.Test;
-
-import com.google.common.base.Optional;
 
 public class AmazonS3ObjectTest {
 
@@ -36,8 +36,8 @@ public class AmazonS3ObjectTest {
     assertThat(object.getBucketName()).isEqualTo("bucket-name");
     assertThat(object.getKey()).isEqualTo("object-key");
     assertThat(object.getSize()).isEqualTo(100);
-    assertThat(object.getETag().orNull()).isEqualTo("object eTag");
-    assertThat(object.getVersionId().orNull()).isEqualTo("object version");
+    assertThat(object.getETag().orElse(null)).isEqualTo("object eTag");
+    assertThat(object.getVersionId().orElse(null)).isEqualTo("object version");
   }
 
   @Test

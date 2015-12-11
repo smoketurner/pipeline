@@ -15,9 +15,10 @@ package com.smoketurner.pipeline.application.core;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Objects;
 import java.util.zip.GZIPInputStream;
+
 import javax.annotation.Nonnull;
-import com.google.common.base.Preconditions;
 
 public final class StreamingGZIPInputStream extends GZIPInputStream {
 
@@ -31,7 +32,7 @@ public final class StreamingGZIPInputStream extends GZIPInputStream {
    */
   public StreamingGZIPInputStream(@Nonnull final InputStream is) throws IOException {
     super(is);
-    wrapped = Preconditions.checkNotNull(is);
+    wrapped = Objects.requireNonNull(is);
   }
 
   /**

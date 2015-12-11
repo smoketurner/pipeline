@@ -19,8 +19,10 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.ws.rs.core.MediaType;
 
 import org.glassfish.jersey.media.sse.OutboundEvent;
@@ -33,7 +35,6 @@ import com.amazonaws.services.sqs.model.Message;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Preconditions;
 import com.smoketurner.pipeline.application.aws.AmazonEventRecord;
 import com.smoketurner.pipeline.application.aws.AmazonEventRecords;
 import com.smoketurner.pipeline.application.aws.AmazonSNSNotification;
@@ -63,9 +64,9 @@ public class MessageProcessor {
    */
   public MessageProcessor(@Nonnull final MetricRegistry registry,
       @Nonnull final AmazonS3Downloader s3, @Nonnull final InstrumentedSseBroadcaster broadcaster) {
-    Preconditions.checkNotNull(registry);
-    this.s3 = Preconditions.checkNotNull(s3);
-    this.broadcaster = Preconditions.checkNotNull(broadcaster);
+    Objects.requireNonNull(registry);
+    this.s3 = Objects.requireNonNull(s3);
+    this.broadcaster = Objects.requireNonNull(broadcaster);
     this.recordCounts = registry.histogram(name(MessageProcessor.class, "record-counts"));
   }
 
@@ -78,7 +79,7 @@ public class MessageProcessor {
    * @return true if the file was fully processed (and the message can be deleted from SQS),
    *         otherwise false.
    */
-  public boolean process(@Nonnull final Message message) {
+  public boolean process(@Nullable final Message message) {
     if (message == null) {
       return false;
     }

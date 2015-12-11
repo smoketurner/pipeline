@@ -16,15 +16,17 @@ package com.smoketurner.pipeline.client;
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.URI;
+import java.util.Objects;
+
 import javax.annotation.Nonnull;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.UriBuilder;
+
 import org.glassfish.jersey.media.sse.EventSource;
 import org.glassfish.jersey.media.sse.SseFeature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import com.google.common.base.Preconditions;
 
 public class PipelineClient implements Closeable {
 
@@ -39,9 +41,9 @@ public class PipelineClient implements Closeable {
    * @param destination API endpoint
    */
   public PipelineClient(@Nonnull final Client client, @Nonnull final URI destination) {
-    this.client = Preconditions.checkNotNull(client);
+    this.client = Objects.requireNonNull(client);
     client.register(SseFeature.class);
-    this.destination = Preconditions.checkNotNull(destination);
+    this.destination = Objects.requireNonNull(destination);
   }
 
   /**

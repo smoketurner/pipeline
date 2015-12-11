@@ -24,16 +24,17 @@ public class AmazonS3ObjectConverter extends Converter<AmazonEventRecord, Amazon
 
   @Override
   protected AmazonS3Object doForward(AmazonEventRecord a) {
-    return new AmazonS3Object(a.getAwsRegion(), a.getS3().getBucket().getName(),
-        a.getS3().getObject().getKey(), a.getS3().getObject().getSize(),
-        a.getS3().getObject().getEtag(), a.getS3().getObject().getVersionId());
+    final AmazonEventRecordS3 s3 = a.getS3();
+    final AmazonEventRecordS3Object object = s3.getObject();
+    return new AmazonS3Object(a.getAwsRegion(), s3.getBucket().getName(), object.getKey(),
+        object.getSize(), object.getEtag(), object.getVersionId());
   }
 
   @Override
   protected AmazonEventRecord doBackward(AmazonS3Object b) {
     final AmazonEventRecordS3Bucket bucket = new AmazonEventRecordS3Bucket(b.getBucketName());
     final AmazonEventRecordS3Object object = new AmazonEventRecordS3Object(b.getKey(), b.getSize(),
-        b.getETag().orNull(), b.getVersionId().orNull(), null);
+        b.getETag().orElse(null), b.getVersionId().orElse(null), null);
     final AmazonEventRecordS3 s3 = new AmazonEventRecordS3(bucket, object);
     return new AmazonEventRecord(null, null, null, null, null, s3);
   }

@@ -14,13 +14,15 @@
 package com.smoketurner.pipeline.application.aws;
 
 import java.util.Objects;
+import java.util.Optional;
+
 import javax.annotation.concurrent.Immutable;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
-import com.google.common.base.Optional;
 
 @Immutable
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -57,12 +59,12 @@ public final class AmazonEventRecordS3Object {
 
   @JsonProperty("eTag")
   public Optional<String> getEtag() {
-    return Optional.fromNullable(eTag);
+    return Optional.ofNullable(eTag);
   }
 
   @JsonProperty
   public Optional<String> getVersionId() {
-    return Optional.fromNullable(versionId);
+    return Optional.ofNullable(versionId);
   }
 
   @JsonProperty

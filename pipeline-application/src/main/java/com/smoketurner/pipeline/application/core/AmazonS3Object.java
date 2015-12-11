@@ -14,10 +14,11 @@
 package com.smoketurner.pipeline.application.core;
 
 import java.util.Objects;
+import java.util.Optional;
+
 import javax.annotation.concurrent.Immutable;
+
 import com.google.common.base.MoreObjects;
-import com.google.common.base.Optional;
-import com.google.common.base.Preconditions;
 
 @Immutable
 public final class AmazonS3Object {
@@ -41,19 +42,19 @@ public final class AmazonS3Object {
    */
   public AmazonS3Object(final String region, final String bucketName, final String key,
       final int size, final Optional<String> eTag, final Optional<String> versionId) {
-    this.region = Preconditions.checkNotNull(region);
-    this.bucketName = Preconditions.checkNotNull(bucketName);
-    this.key = Preconditions.checkNotNull(key);
+    this.region = Objects.requireNonNull(region);
+    this.bucketName = Objects.requireNonNull(bucketName);
+    this.key = Objects.requireNonNull(key);
     this.size = size;
     if (eTag == null) {
       this.eTag = null;
     } else {
-      this.eTag = eTag.orNull();
+      this.eTag = eTag.orElse(null);
     }
     if (versionId == null) {
       this.versionId = null;
     } else {
-      this.versionId = versionId.orNull();
+      this.versionId = versionId.orElse(null);
     }
   }
 
@@ -74,11 +75,11 @@ public final class AmazonS3Object {
   }
 
   public Optional<String> getETag() {
-    return Optional.fromNullable(eTag);
+    return Optional.ofNullable(eTag);
   }
 
   public Optional<String> getVersionId() {
-    return Optional.fromNullable(versionId);
+    return Optional.ofNullable(versionId);
   }
 
   @Override

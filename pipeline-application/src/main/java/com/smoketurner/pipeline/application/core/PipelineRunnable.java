@@ -14,6 +14,7 @@
 package com.smoketurner.pipeline.application.core;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
@@ -24,7 +25,6 @@ import org.slf4j.LoggerFactory;
 
 import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.OverLimitException;
-import com.google.common.base.Preconditions;
 
 public class PipelineRunnable implements Runnable {
 
@@ -43,12 +43,12 @@ public class PipelineRunnable implements Runnable {
    * @param sqs Amazon SQS iterator
    * @param broadcaster SSE broadcaster
    */
-  public PipelineRunnable(@Nonnull final MessageProcessor processor, @Nonnull final AmazonSQSIterator sqs,
-      @Nonnull final InstrumentedSseBroadcaster broadcaster) {
+  public PipelineRunnable(@Nonnull final MessageProcessor processor,
+      @Nonnull final AmazonSQSIterator sqs, @Nonnull final InstrumentedSseBroadcaster broadcaster) {
 
-    this.processor = Preconditions.checkNotNull(processor);
-    this.sqs = Preconditions.checkNotNull(sqs);
-    this.broadcaster = Preconditions.checkNotNull(broadcaster);
+    this.processor = Objects.requireNonNull(processor);
+    this.sqs = Objects.requireNonNull(sqs);
+    this.broadcaster = Objects.requireNonNull(broadcaster);
   }
 
   @Override
@@ -60,14 +60,17 @@ public class PipelineRunnable implements Runnable {
 
       // if we don't have any connections, sleep then continue the main processing loop
       if (broadcaster.isEmpty()) {
+        LOGGER.info("No active connections found, sleeping for {} seconds",
+            NO_CONNECTIONS_SLEEP_SECS);
+
         try {
-          LOGGER.info("No active connections found, sleeping for {} seconds",
-              NO_CONNECTIONS_SLEEP_SECS);
           TimeUnit.SECONDS.sleep(NO_CONNECTIONS_SLEEP_SECS);
-          continue;
         } catch (InterruptedException e) {
           Thread.currentThread().interrupt();
         }
+
+        // go back up to the SQS loop
+        continue;
       }
 
       // Request new messages from SQS and continue the loop upon failure
@@ -83,9 +86,12 @@ public class PipelineRunnable implements Runnable {
         } catch (InterruptedException ex) {
           Thread.currentThread().interrupt();
         }
+
+        // go back up to the SQS loop
         continue;
       } catch (Exception e) {
         LOGGER.error("Failed to request messages from SQS", e);
+        // go back up to the SQS loop
         continue;
       }
 

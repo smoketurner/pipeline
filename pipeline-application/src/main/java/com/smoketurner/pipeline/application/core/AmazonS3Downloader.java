@@ -14,6 +14,8 @@
 package com.smoketurner.pipeline.application.core;
 
 import java.io.IOException;
+import java.util.Collections;
+import java.util.Objects;
 
 import javax.annotation.Nonnull;
 
@@ -25,9 +27,7 @@ import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.S3Object;
-import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
-import com.google.common.collect.ImmutableList;
 import com.smoketurner.pipeline.application.aws.AmazonEventRecord;
 import com.smoketurner.pipeline.application.convert.AmazonS3ObjectConverter;
 import com.smoketurner.pipeline.application.exceptions.AmazonS3ConstraintException;
@@ -47,7 +47,7 @@ public class AmazonS3Downloader {
    * @param s3 Amazon S3 client
    */
   public AmazonS3Downloader(@Nonnull final AmazonS3Client s3) {
-    this.s3 = Preconditions.checkNotNull(s3);
+    this.s3 = Objects.requireNonNull(s3);
   }
 
   /**
@@ -60,26 +60,26 @@ public class AmazonS3Downloader {
    */
   public S3Object fetch(@Nonnull final AmazonEventRecord record)
       throws AmazonS3ConstraintException, AmazonS3ZeroSizeException {
-    final AmazonS3Object object = converter.convert(Preconditions.checkNotNull(record));
-
-    LOGGER.debug("Retrieving key: {}", object.getKey());
+    final AmazonS3Object object = converter.convert(Objects.requireNonNull(record));
 
     final GetObjectRequest request = new GetObjectRequest(object.getBucketName(), object.getKey());
     if (object.getVersionId().isPresent()) {
       request.setVersionId(object.getVersionId().get());
     }
     if (object.getETag().isPresent()) {
-      request.setMatchingETagConstraints(ImmutableList.of(object.getETag().get()));
+      request.setMatchingETagConstraints(Collections.singletonList(object.getETag().get()));
     }
+
+    LOGGER.debug("Fetching key: {}", object.getKey());
 
     final S3Object download;
     try {
       download = s3.getObject(request);
     } catch (AmazonServiceException e) {
-      LOGGER.error("Failed to download object from S3", e);
+      LOGGER.error("Service error while fetching object from S3", e);
       throw e;
     } catch (AmazonClientException e) {
-      LOGGER.error("Failed to download object from S3", e);
+      LOGGER.error("Client error while fetching object from S3", e);
       throw e;
     }
 

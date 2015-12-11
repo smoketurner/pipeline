@@ -15,6 +15,7 @@ package com.smoketurner.pipeline.application.core;
 
 import static com.codahale.metrics.MetricRegistry.name;
 
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.annotation.Nonnull;
@@ -27,7 +28,6 @@ import org.slf4j.LoggerFactory;
 
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
-import com.google.common.base.Preconditions;
 
 public class InstrumentedSseBroadcaster extends SseBroadcaster {
 
@@ -45,7 +45,7 @@ public class InstrumentedSseBroadcaster extends SseBroadcaster {
    */
   public InstrumentedSseBroadcaster(@Nonnull final MetricRegistry registry) {
     super();
-    Preconditions.checkNotNull(registry);
+    Objects.requireNonNull(registry);
     this.pingRate = registry.meter(name(SseBroadcaster.class, "broadcast", "ping-sends"));
     this.eventRate = registry.meter(name(SseBroadcaster.class, "broadcast", "event-sends"));
   }

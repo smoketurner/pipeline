@@ -17,6 +17,7 @@ import static com.codahale.metrics.MetricRegistry.name;
 
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -31,7 +32,6 @@ import com.amazonaws.services.sqs.model.ReceiveMessageResult;
 import com.codahale.metrics.Counter;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
-import com.google.common.base.Preconditions;
 
 public class AmazonSQSIterator implements Iterator<List<Message>> {
 
@@ -53,12 +53,13 @@ public class AmazonSQSIterator implements Iterator<List<Message>> {
    *
    * @param client SQS client
    * @param queueUrl Queue URL
+   * @param registry Metric Registry
    */
   public AmazonSQSIterator(@Nonnull final AmazonSQSClient client, @Nonnull final String queueUrl,
       @Nonnull final MetricRegistry registry) {
-    Preconditions.checkNotNull(registry);
-    this.client = Preconditions.checkNotNull(client);
-    this.queueUrl = Preconditions.checkNotNull(queueUrl);
+    Objects.requireNonNull(registry);
+    this.client = Objects.requireNonNull(client);
+    this.queueUrl = Objects.requireNonNull(queueUrl);
 
     this.receiveRequests = registry.counter(name(AmazonSQSIterator.class, "receive-requests"));
     this.deleteRequests = registry.counter(name(AmazonSQSIterator.class, "delete-requests"));
