@@ -65,6 +65,12 @@ public class InstrumentedSseBroadcaster extends SseBroadcaster {
   }
 
   @Override
+  public void onException(final ChunkedOutput<OutboundEvent> chunkedOutput,
+      final Exception exception) {
+    LOGGER.error("Connection exception", exception);
+  }
+
+  @Override
   public void onClose(final ChunkedOutput<OutboundEvent> chunkedOutput) {
     final int active = connectionCounter.decrementAndGet();
     LOGGER.debug("Closed connection ({} total)", active);

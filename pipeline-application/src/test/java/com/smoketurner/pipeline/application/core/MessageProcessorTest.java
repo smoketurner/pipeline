@@ -22,13 +22,21 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import org.apache.http.client.methods.HttpRequestBase;
+import org.glassfish.jersey.media.sse.OutboundEvent;
 import org.junit.Before;
 import org.junit.Test;
 
 import com.amazonaws.AmazonServiceException;
+import com.amazonaws.services.s3.model.ObjectMetadata;
+import com.amazonaws.services.s3.model.S3Object;
+import com.amazonaws.services.s3.model.S3ObjectInputStream;
 import com.amazonaws.services.sqs.model.Message;
 import com.codahale.metrics.MetricRegistry;
+import com.google.common.io.Resources;
 import com.smoketurner.pipeline.application.aws.AmazonEventRecord;
+import com.smoketurner.pipeline.application.exceptions.AmazonS3ConstraintException;
+import com.smoketurner.pipeline.application.exceptions.AmazonS3ZeroSizeException;
 
 import io.dropwizard.testing.FixtureHelpers;
 
@@ -52,6 +60,7 @@ public class MessageProcessorTest {
     final boolean actual = processor.process(null);
 
     verify(broadcaster, never()).isEmpty();
+    verify(broadcaster, never()).broadcast(any(OutboundEvent.class));
     verify(s3, never()).fetch(any(AmazonEventRecord.class));
     assertThat(actual).isFalse();
   }
@@ -62,6 +71,7 @@ public class MessageProcessorTest {
     final boolean actual = processor.process(message);
 
     verify(broadcaster).isEmpty();
+    verify(broadcaster, never()).broadcast(any(OutboundEvent.class));
     verify(s3, never()).fetch(any(AmazonEventRecord.class));
     assertThat(actual).isFalse();
   }
@@ -72,18 +82,21 @@ public class MessageProcessorTest {
     final boolean actual = processor.process(message);
 
     verify(broadcaster).isEmpty();
+    verify(broadcaster, never()).broadcast(any(OutboundEvent.class));
     verify(s3, never()).fetch(any(AmazonEventRecord.class));
     assertThat(actual).isTrue();
   }
 
   @Test
-  public void testProcessS3EventParseFailure() throws Exception {
+  public void testProcessS3EventFetchFailure() throws Exception {
     when(broadcaster.isEmpty()).thenReturn(false);
     when(s3.fetch(any(AmazonEventRecord.class))).thenThrow(new AmazonServiceException("error"));
+
     message.setBody(FixtureHelpers.fixture("fixtures/sns_notification.json"));
     final boolean actual = processor.process(message);
 
     verify(broadcaster, times(2)).isEmpty();
+    verify(broadcaster, never()).broadcast(any(OutboundEvent.class));
     verify(s3).fetch(any(AmazonEventRecord.class));
     assertThat(actual).isFalse();
   }
@@ -91,12 +104,93 @@ public class MessageProcessorTest {
   @Test
   public void testProcessNoConnectionsAfterParse() throws Exception {
     when(broadcaster.isEmpty()).thenReturn(false, true);
-    when(s3.fetch(any(AmazonEventRecord.class))).thenThrow(new AmazonServiceException("error"));
+
     message.setBody(FixtureHelpers.fixture("fixtures/sns_notification.json"));
     final boolean actual = processor.process(message);
 
     verify(broadcaster, times(2)).isEmpty();
+    verify(broadcaster, never()).broadcast(any(OutboundEvent.class));
     verify(s3, never()).fetch(any(AmazonEventRecord.class));
+    assertThat(actual).isFalse();
+  }
+
+  @Test
+  public void testProcessS3ZeroSizeFailure() throws Exception {
+    when(broadcaster.isEmpty()).thenReturn(false);
+    when(s3.fetch(any(AmazonEventRecord.class))).thenThrow(new AmazonS3ZeroSizeException());
+
+    message.setBody(FixtureHelpers.fixture("fixtures/sns_notification.json"));
+    final boolean actual = processor.process(message);
+
+    verify(broadcaster, times(2)).isEmpty();
+    verify(broadcaster, never()).broadcast(any(OutboundEvent.class));
+    verify(s3).fetch(any(AmazonEventRecord.class));
+    assertThat(actual).isTrue();
+  }
+
+  @Test
+  public void testProcessS3ConstraintFailure() throws Exception {
+    when(broadcaster.isEmpty()).thenReturn(false);
+    when(s3.fetch(any(AmazonEventRecord.class))).thenThrow(new AmazonS3ConstraintException());
+
+    message.setBody(FixtureHelpers.fixture("fixtures/sns_notification.json"));
+    final boolean actual = processor.process(message);
+
+    verify(broadcaster, times(2)).isEmpty();
+    verify(broadcaster, never()).broadcast(any(OutboundEvent.class));
+    verify(s3).fetch(any(AmazonEventRecord.class));
+    assertThat(actual).isTrue();
+  }
+
+  @Test
+  public void testProcess() throws Exception {
+    final HttpRequestBase request = mock(HttpRequestBase.class);
+    final S3ObjectInputStream stream = new S3ObjectInputStream(
+        Resources.asByteSource(Resources.getResource("fixtures/s3_object.txt.gz")).openStream(),
+        request);
+
+    final ObjectMetadata metadata = new ObjectMetadata();
+    metadata.setContentEncoding("gzip");
+    final S3Object object = new S3Object();
+    object.setObjectMetadata(metadata);
+    object.setObjectContent(stream);
+
+    when(broadcaster.isEmpty()).thenReturn(false);
+    when(s3.fetch(any(AmazonEventRecord.class))).thenReturn(object);
+
+    message.setBody(FixtureHelpers.fixture("fixtures/sns_notification.json"));
+    final boolean actual = processor.process(message);
+
+    verify(broadcaster, times(12)).isEmpty();
+    verify(broadcaster, times(10)).broadcast(any(OutboundEvent.class));
+    verify(s3).fetch(any(AmazonEventRecord.class));
+    verify(request, never()).abort();
+    assertThat(actual).isTrue();
+  }
+
+  @Test
+  public void testProcessNoConnectionsDuringDownload() throws Exception {
+    final HttpRequestBase request = mock(HttpRequestBase.class);
+    final S3ObjectInputStream stream = new S3ObjectInputStream(
+        Resources.asByteSource(Resources.getResource("fixtures/s3_object.txt.gz")).openStream(),
+        request);
+
+    final ObjectMetadata metadata = new ObjectMetadata();
+    metadata.setContentEncoding("gzip");
+    final S3Object object = new S3Object();
+    object.setObjectMetadata(metadata);
+    object.setObjectContent(stream);
+
+    when(broadcaster.isEmpty()).thenReturn(false, false, true);
+    when(s3.fetch(any(AmazonEventRecord.class))).thenReturn(object);
+
+    message.setBody(FixtureHelpers.fixture("fixtures/sns_notification.json"));
+    final boolean actual = processor.process(message);
+
+    verify(broadcaster, times(3)).isEmpty();
+    verify(broadcaster, times(1)).broadcast(any(OutboundEvent.class));
+    verify(s3).fetch(any(AmazonEventRecord.class));
+    verify(request).abort();
     assertThat(actual).isFalse();
   }
 }

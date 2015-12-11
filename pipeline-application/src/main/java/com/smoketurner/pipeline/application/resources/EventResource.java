@@ -16,13 +16,17 @@ package com.smoketurner.pipeline.application.resources;
 import javax.annotation.Nonnull;
 import javax.inject.Singleton;
 import javax.ws.rs.GET;
+import javax.ws.rs.HeaderParam;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.ServiceUnavailableException;
+
 import org.glassfish.jersey.media.sse.EventOutput;
 import org.glassfish.jersey.media.sse.SseFeature;
+
 import com.google.common.base.Preconditions;
 import com.smoketurner.pipeline.application.core.InstrumentedSseBroadcaster;
+
 import io.dropwizard.util.Duration;
 import io.swagger.annotations.Api;
 
@@ -45,7 +49,7 @@ public class EventResource {
 
   @GET
   @Produces(SseFeature.SERVER_SENT_EVENTS)
-  public EventOutput fetch() {
+  public EventOutput fetch(@HeaderParam(SseFeature.LAST_EVENT_ID_HEADER) String lastEventId) {
     final EventOutput output = new EventOutput();
     if (!broadcaster.add(output)) {
       throw new ServiceUnavailableException(RETRY_AFTER.toSeconds());
