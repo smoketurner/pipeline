@@ -67,7 +67,7 @@ public class InstrumentedSseBroadcaster extends SseBroadcaster {
   @Override
   public void onException(final ChunkedOutput<OutboundEvent> chunkedOutput,
       final Exception exception) {
-    LOGGER.error("Connection exception", exception);
+    LOGGER.trace("Connection exception", exception);
   }
 
   @Override

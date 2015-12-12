@@ -183,7 +183,8 @@ public class MessageProcessor {
         }
 
       } catch (IOException e) {
-        LOGGER.error("Error streaming key: " + download.getKey(), e);
+        LOGGER.error("Error streaming key: " + download.getBucketName() + "/" + download.getKey(),
+            e);
         return false;
       }
 

@@ -15,8 +15,10 @@ package com.smoketurner.pipeline.application.config;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+
 import org.hibernate.validator.constraints.NotEmpty;
 import org.hibernate.validator.valuehandling.UnwrapValidatedValue;
+
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.sqs.AmazonSQSClient;
@@ -26,6 +28,7 @@ import com.google.common.base.Optional;
 import com.google.common.net.HostAndPort;
 import com.smoketurner.pipeline.application.managed.AmazonS3ClientManager;
 import com.smoketurner.pipeline.application.managed.AmazonSQSClientManager;
+
 import io.dropwizard.setup.Environment;
 
 public class AwsConfiguration {

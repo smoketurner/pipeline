@@ -70,7 +70,7 @@ public class AmazonS3Downloader {
       request.setMatchingETagConstraints(Collections.singletonList(object.getETag().get()));
     }
 
-    LOGGER.debug("Fetching key: {}", object.getKey());
+    LOGGER.debug("Fetching key: {}/{}", object.getBucketName(), object.getKey());
 
     final S3Object download;
     try {
@@ -84,7 +84,8 @@ public class AmazonS3Downloader {
     }
 
     if (download == null) {
-      LOGGER.error("eTag from object did not match for key: {}", object.getKey());
+      LOGGER.error("eTag from object did not match for key: {}/{}", object.getBucketName(),
+          object.getKey());
       throw new AmazonS3ConstraintException(object.getKey());
     }
 
@@ -93,14 +94,17 @@ public class AmazonS3Downloader {
       try {
         download.close();
       } catch (IOException e) {
-        LOGGER.error("Failed to close S3 stream for key: {}", object.getKey());
+        LOGGER.error("Failed to close S3 stream for key: {}/{}", download.getBucketName(),
+            download.getKey());
       }
 
-      LOGGER.debug("Object size is zero for key: {}", object.getKey());
+      LOGGER.debug("Object size is zero for key: {}/{}", download.getBucketName(),
+          download.getKey());
       throw new AmazonS3ZeroSizeException(object.getKey());
     }
 
-    LOGGER.debug("Streaming key ({} bytes): {}", contentLength, download.getKey());
+    LOGGER.debug("Streaming key ({} bytes): {}/{}", contentLength, download.getBucketName(),
+        download.getKey());
 
     return download;
   }
