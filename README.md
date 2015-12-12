@@ -1,7 +1,7 @@
 Pipeline
 ========
 [![Build Status](https://travis-ci.org/smoketurner/pipeline.svg?branch=master)](https://travis-ci.org/smoketurner/pipeline)
-[![Coverage Status](https://coveralls.io/repos/smoketurner/pipeline/badge.svg)](https://coveralls.io/r/smoketurner/pipeline)
+[![Coverage Status](https://coveralls.io/repos/smoketurner/pipeline/badge.svg?branch=master&service=github)](https://coveralls.io/github/smoketurner/pipeline?branch=master)
 [![Maven Central](https://img.shields.io/maven-central/v/com.smoketurner.pipeline/notification-parent.svg?style=flat-square)](https://maven-badges.herokuapp.com/maven-central/com.smoketurner.pipeline/pipeline-parent/)
 [![GitHub license](https://img.shields.io/github/license/smoketurner/pipeline.svg?style=flat-square)](https://github.com/smoketurner/pipeline/tree/master)
 
