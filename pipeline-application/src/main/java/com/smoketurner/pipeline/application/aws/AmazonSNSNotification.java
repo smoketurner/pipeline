@@ -1,15 +1,17 @@
 /**
  * Copyright 2015 Smoke Turner, LLC.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
- * in compliance with the License. You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software distributed under the License
- * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
- * or implied. See the License for the specific language governing permissions and limitations under
- * the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package com.smoketurner.pipeline.application.aws;
 
@@ -27,47 +29,48 @@ import com.google.common.base.MoreObjects;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public final class AmazonSNSNotification {
 
-  private final String message;
-  private final DateTime timestamp;
+    private final String message;
+    private final DateTime timestamp;
 
-  @JsonCreator
-  public AmazonSNSNotification(@JsonProperty("Message") final String message,
-      @JsonProperty("Timestamp") final DateTime timestamp) {
-    this.message = message;
-    this.timestamp = timestamp;
-  }
-
-  @JsonProperty("Message")
-  public String getMessage() {
-    return message;
-  }
-
-  @JsonProperty("Timestamp")
-  public DateTime getTimestamp() {
-    return timestamp;
-  }
-
-  @Override
-  public boolean equals(final Object obj) {
-    if (this == obj) {
-      return true;
-    }
-    if ((obj == null) || (getClass() != obj.getClass())) {
-      return false;
+    @JsonCreator
+    public AmazonSNSNotification(@JsonProperty("Message") final String message,
+            @JsonProperty("Timestamp") final DateTime timestamp) {
+        this.message = message;
+        this.timestamp = timestamp;
     }
 
-    final AmazonSNSNotification other = (AmazonSNSNotification) obj;
-    return Objects.equals(message, other.message) && Objects.equals(timestamp, other.timestamp);
-  }
+    @JsonProperty("Message")
+    public String getMessage() {
+        return message;
+    }
 
-  @Override
-  public int hashCode() {
-    return Objects.hash(message, timestamp);
-  }
+    @JsonProperty("Timestamp")
+    public DateTime getTimestamp() {
+        return timestamp;
+    }
 
-  @Override
-  public String toString() {
-    return MoreObjects.toStringHelper(this).add("message", message).add("timestamp", timestamp)
-        .toString();
-  }
+    @Override
+    public boolean equals(final Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if ((obj == null) || (getClass() != obj.getClass())) {
+            return false;
+        }
+
+        final AmazonSNSNotification other = (AmazonSNSNotification) obj;
+        return Objects.equals(message, other.message)
+                && Objects.equals(timestamp, other.timestamp);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(message, timestamp);
+    }
+
+    @Override
+    public String toString() {
+        return MoreObjects.toStringHelper(this).add("message", message)
+                .add("timestamp", timestamp).toString();
+    }
 }

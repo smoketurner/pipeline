@@ -1,15 +1,17 @@
 /**
  * Copyright 2015 Smoke Turner, LLC.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
- * in compliance with the License. You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software distributed under the License
- * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
- * or implied. See the License for the specific language governing permissions and limitations under
- * the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package com.smoketurner.pipeline.application.core;
 
@@ -17,95 +19,101 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
-
 import javax.annotation.Nonnull;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.OverLimitException;
 
 public class PipelineRunnable implements Runnable {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(PipelineRunnable.class);
-  private static final long NO_CONNECTIONS_SLEEP_SECS = 1;
-  private static final long SQS_FAILURE_SLEEP_SECS = 10;
+    private static final Logger LOGGER = LoggerFactory
+            .getLogger(PipelineRunnable.class);
+    private static final long NO_CONNECTIONS_SLEEP_SECS = 1;
+    private static final long SQS_FAILURE_SLEEP_SECS = 10;
 
-  private final MessageProcessor processor;
-  private final AmazonSQSIterator sqs;
-  private final InstrumentedSseBroadcaster broadcaster;
+    private final MessageProcessor processor;
+    private final AmazonSQSIterator sqs;
+    private final InstrumentedSseBroadcaster broadcaster;
 
-  /**
-   * Constructor
-   *
-   * @param processor Message processor
-   * @param sqs Amazon SQS iterator
-   * @param broadcaster SSE broadcaster
-   */
-  public PipelineRunnable(@Nonnull final MessageProcessor processor,
-      @Nonnull final AmazonSQSIterator sqs, @Nonnull final InstrumentedSseBroadcaster broadcaster) {
+    /**
+     * Constructor
+     *
+     * @param processor
+     *            Message processor
+     * @param sqs
+     *            Amazon SQS iterator
+     * @param broadcaster
+     *            SSE broadcaster
+     */
+    public PipelineRunnable(@Nonnull final MessageProcessor processor,
+            @Nonnull final AmazonSQSIterator sqs,
+            @Nonnull final InstrumentedSseBroadcaster broadcaster) {
 
-    this.processor = Objects.requireNonNull(processor);
-    this.sqs = Objects.requireNonNull(sqs);
-    this.broadcaster = Objects.requireNonNull(broadcaster);
-  }
-
-  @Override
-  public void run() {
-    while (sqs.hasNext() && !Thread.currentThread().isInterrupted()) {
-
-      // send heartbeat ping event to all connections to flush out disconnected clients
-      broadcaster.ping();
-
-      // if we don't have any connections, sleep then continue the main processing loop
-      if (broadcaster.isEmpty()) {
-        LOGGER.info("No active connections found, sleeping for {} seconds",
-            NO_CONNECTIONS_SLEEP_SECS);
-
-        try {
-          TimeUnit.SECONDS.sleep(NO_CONNECTIONS_SLEEP_SECS);
-        } catch (InterruptedException e) {
-          Thread.currentThread().interrupt();
-        }
-
-        // go back up to the SQS loop
-        continue;
-      }
-
-      // Request new messages from SQS and continue the loop upon failure
-      final List<Message> messages;
-      try {
-        messages = sqs.next();
-      } catch (OverLimitException e) {
-        LOGGER.error(
-            "Reached SQS request limit, sleeping for " + SQS_FAILURE_SLEEP_SECS + " seconds", e);
-
-        try {
-          TimeUnit.SECONDS.sleep(SQS_FAILURE_SLEEP_SECS);
-        } catch (InterruptedException ex) {
-          Thread.currentThread().interrupt();
-        }
-
-        // go back up to the SQS loop
-        continue;
-      } catch (Exception e) {
-        LOGGER.error("Failed to request messages from SQS", e);
-        // go back up to the SQS loop
-        continue;
-      }
-
-      // process each SQS message in parallel
-      messages.parallelStream().forEach(new Consumer<Message>() {
-        @Override
-        public void accept(final Message message) {
-          // if the message was successfully processed and all of the events in the S3 download were
-          // successfully processed, we can safely delete the message.
-          if (processor.process(message)) {
-            sqs.deleteMessage(message);
-          }
-        }
-      });
+        this.processor = Objects.requireNonNull(processor);
+        this.sqs = Objects.requireNonNull(sqs);
+        this.broadcaster = Objects.requireNonNull(broadcaster);
     }
-  }
+
+    @Override
+    public void run() {
+        while (sqs.hasNext() && !Thread.currentThread().isInterrupted()) {
+
+            // send heartbeat ping event to all connections to flush out
+            // disconnected clients
+            broadcaster.ping();
+
+            // if we don't have any connections, sleep then continue the main
+            // processing loop
+            if (broadcaster.isEmpty()) {
+                LOGGER.info(
+                        "No active connections found, sleeping for {} seconds",
+                        NO_CONNECTIONS_SLEEP_SECS);
+
+                try {
+                    TimeUnit.SECONDS.sleep(NO_CONNECTIONS_SLEEP_SECS);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+
+                // go back up to the SQS loop
+                continue;
+            }
+
+            // Request new messages from SQS and continue the loop upon failure
+            final List<Message> messages;
+            try {
+                messages = sqs.next();
+            } catch (OverLimitException e) {
+                LOGGER.error("Reached SQS request limit, sleeping for "
+                        + SQS_FAILURE_SLEEP_SECS + " seconds", e);
+
+                try {
+                    TimeUnit.SECONDS.sleep(SQS_FAILURE_SLEEP_SECS);
+                } catch (InterruptedException ex) {
+                    Thread.currentThread().interrupt();
+                }
+
+                // go back up to the SQS loop
+                continue;
+            } catch (Exception e) {
+                LOGGER.error("Failed to request messages from SQS", e);
+                // go back up to the SQS loop
+                continue;
+            }
+
+            // process each SQS message in parallel
+            messages.parallelStream().forEach(new Consumer<Message>() {
+                @Override
+                public void accept(final Message message) {
+                    // if the message was successfully processed and all of the
+                    // events in the S3 download were
+                    // successfully processed, we can safely delete the message.
+                    if (processor.process(message)) {
+                        sqs.deleteMessage(message);
+                    }
+                }
+            });
+        }
+    }
 }

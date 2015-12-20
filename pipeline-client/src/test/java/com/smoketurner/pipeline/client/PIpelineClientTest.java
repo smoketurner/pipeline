@@ -22,95 +22,100 @@ import io.dropwizard.testing.junit.DropwizardClientRule;
 
 public class PIpelineClientTest {
 
-  @Path("/events")
-  public static class EventResource {
-    @GET
-    @Produces(SseFeature.SERVER_SENT_EVENTS)
-    public EventOutput fetch() {
-      final EventOutput eventOutput = new EventOutput();
-      new Thread(new Runnable() {
+    @Path("/events")
+    public static class EventResource {
+        @GET
+        @Produces(SseFeature.SERVER_SENT_EVENTS)
+        public EventOutput fetch() {
+            final EventOutput eventOutput = new EventOutput();
+            new Thread(new Runnable() {
 
-        @Override
-        public void run() {
-          try {
-            for (int i = 0; i < 10; i++) {
-              final OutboundEvent.Builder eventBuilder = new OutboundEvent.Builder();
-              eventBuilder.name("message-to-client");
-              eventBuilder.data(String.class, "Hello world " + i + "!");
-              final OutboundEvent event = eventBuilder.build();
-              eventOutput.write(event);
-            }
-          } catch (IOException e) {
-            throw new RuntimeException("Error when writing the event.", e);
-          } finally {
-            try {
-              eventOutput.close();
-            } catch (IOException ioClose) {
-              throw new RuntimeException("Error when closing the event output.", ioClose);
-            }
-          }
+                @Override
+                public void run() {
+                    try {
+                        for (int i = 0; i < 10; i++) {
+                            final OutboundEvent.Builder eventBuilder = new OutboundEvent.Builder();
+                            eventBuilder.name("message-to-client");
+                            eventBuilder.data(String.class,
+                                    "Hello world " + i + "!");
+                            final OutboundEvent event = eventBuilder.build();
+                            eventOutput.write(event);
+                        }
+                    } catch (IOException e) {
+                        throw new RuntimeException(
+                                "Error when writing the event.", e);
+                    } finally {
+                        try {
+                            eventOutput.close();
+                        } catch (IOException ioClose) {
+                            throw new RuntimeException(
+                                    "Error when closing the event output.",
+                                    ioClose);
+                        }
+                    }
+                }
+            }).start();
+            return eventOutput;
         }
-      }).start();
-      return eventOutput;
     }
-  }
 
-  @Path("/ping")
-  public static class PingResource {
-    @GET
-    public String ping() {
-      return "pong";
+    @Path("/ping")
+    public static class PingResource {
+        @GET
+        public String ping() {
+            return "pong";
+        }
     }
-  }
 
-  @Path("/version")
-  public static class VersionResource {
-    @GET
-    public String version() {
-      return "1.0.0";
+    @Path("/version")
+    public static class VersionResource {
+        @GET
+        public String version() {
+            return "1.0.0";
+        }
     }
-  }
 
-  @ClassRule
-  public final static DropwizardClientRule resources =
-      new DropwizardClientRule(new EventResource(), new PingResource(), new VersionResource());
+    @ClassRule
+    public final static DropwizardClientRule resources = new DropwizardClientRule(
+            new EventResource(), new PingResource(), new VersionResource());
 
-  private PipelineClient client;
+    private PipelineClient client;
 
-  @Before
-  public void setUp() {
-    client = new PipelineClient(ClientBuilder.newClient(), resources.baseUri());
-  }
+    @Before
+    public void setUp() {
+        client = new PipelineClient(ClientBuilder.newClient(),
+                resources.baseUri());
+    }
 
-  @After
-  public void tearDown() throws Exception {
-    client.close();
-  }
+    @After
+    public void tearDown() throws Exception {
+        client.close();
+    }
 
-  @Test
-  public void testFetch() throws Exception {
-    final CountDownLatch latch = new CountDownLatch(10);
-    final EventSource source = client.fetch();
+    @Test
+    public void testFetch() throws Exception {
+        final CountDownLatch latch = new CountDownLatch(10);
+        final EventSource source = client.fetch();
 
-    final EventListener listener = new EventListener() {
-      @Override
-      public void onEvent(InboundEvent inboundEvent) {
-        latch.countDown();
-      }
-    };
-    source.register(listener, "message-to-client");
-    source.open();
-    latch.await(10, TimeUnit.SECONDS);
-    source.close();
-  }
+        final EventListener listener = new EventListener() {
+            @Override
+            public void onEvent(InboundEvent inboundEvent) {
+                latch.countDown();
+            }
+        };
+        source.register(listener, "message-to-client");
+        source.open();
+        latch.await(10, TimeUnit.SECONDS);
+        source.close();
+    }
 
-  @Test
-  public void testPing() throws Exception {
-    assertThat(client.ping()).isTrue();
-  }
+    @Test
+    public void testPing() throws Exception {
+        assertThat(client.ping()).isTrue();
+    }
 
-  @Test
-  public void testVersion() throws Exception {
-    assertThat(client.version()).isEqualTo("1.0.0");
-  }
+    @Test
+    public void testVersion() throws Exception {
+        assertThat(client.version()).isEqualTo("1.0.0");
+    }
 }
