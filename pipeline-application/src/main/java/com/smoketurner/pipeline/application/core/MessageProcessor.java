@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
+import java.util.function.Predicate;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.ws.rs.core.MediaType;
@@ -40,7 +41,7 @@ import com.smoketurner.pipeline.application.exceptions.AmazonS3ConstraintExcepti
 import com.smoketurner.pipeline.application.exceptions.AmazonS3ZeroSizeException;
 import io.dropwizard.jackson.Jackson;
 
-public class MessageProcessor {
+public class MessageProcessor implements Predicate<Message> {
 
     private static final Logger LOGGER = LoggerFactory
             .getLogger(MessageProcessor.class);
@@ -86,7 +87,8 @@ public class MessageProcessor {
      * @return true if the file was fully processed (and the message can be
      *         deleted from SQS), otherwise false.
      */
-    public boolean process(@Nullable final Message message) {
+    @Override
+    public boolean test(@Nullable final Message message) {
         if (message == null) {
             return false;
         }

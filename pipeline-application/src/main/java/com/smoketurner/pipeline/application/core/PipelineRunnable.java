@@ -18,7 +18,6 @@ package com.smoketurner.pipeline.application.core;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
 import javax.annotation.Nonnull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -102,18 +101,11 @@ public class PipelineRunnable implements Runnable {
                 continue;
             }
 
-            // process each SQS message in parallel
-            messages.parallelStream().forEach(new Consumer<Message>() {
-                @Override
-                public void accept(final Message message) {
-                    // if the message was successfully processed and all of the
-                    // events in the S3 download were
-                    // successfully processed, we can safely delete the message.
-                    if (processor.process(message)) {
-                        sqs.deleteMessage(message);
-                    }
-                }
-            });
+            // Process each SQS message in parallel. If the message was
+            // successfully processed and all of the events in the S3 download
+            // were successfully broadcast, we can safely delete the message.
+            messages.parallelStream().filter(processor::test)
+                    .forEach(sqs::deleteMessage);
         }
     }
 }

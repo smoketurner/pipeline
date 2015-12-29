@@ -58,7 +58,7 @@ public class MessageProcessorTest {
 
     @Test
     public void testProcessNullMessage() throws Exception {
-        final boolean actual = processor.process(null);
+        final boolean actual = processor.test(null);
 
         verify(broadcaster, never()).isEmpty();
         verify(broadcaster, never()).broadcast(any(OutboundEvent.class));
@@ -69,7 +69,7 @@ public class MessageProcessorTest {
     @Test
     public void testProcessNoConnections() throws Exception {
         when(broadcaster.isEmpty()).thenReturn(true);
-        final boolean actual = processor.process(message);
+        final boolean actual = processor.test(message);
 
         verify(broadcaster).isEmpty();
         verify(broadcaster, never()).broadcast(any(OutboundEvent.class));
@@ -80,7 +80,7 @@ public class MessageProcessorTest {
     @Test
     public void testProcessSNSParseFailure() throws Exception {
         when(broadcaster.isEmpty()).thenReturn(false);
-        final boolean actual = processor.process(message);
+        final boolean actual = processor.test(message);
 
         verify(broadcaster).isEmpty();
         verify(broadcaster, never()).broadcast(any(OutboundEvent.class));
@@ -96,7 +96,7 @@ public class MessageProcessorTest {
 
         message.setBody(
                 FixtureHelpers.fixture("fixtures/sns_notification.json"));
-        final boolean actual = processor.process(message);
+        final boolean actual = processor.test(message);
 
         verify(broadcaster, times(2)).isEmpty();
         verify(broadcaster, never()).broadcast(any(OutboundEvent.class));
@@ -110,7 +110,7 @@ public class MessageProcessorTest {
 
         message.setBody(
                 FixtureHelpers.fixture("fixtures/sns_notification.json"));
-        final boolean actual = processor.process(message);
+        final boolean actual = processor.test(message);
 
         verify(broadcaster, times(2)).isEmpty();
         verify(broadcaster, never()).broadcast(any(OutboundEvent.class));
@@ -126,7 +126,7 @@ public class MessageProcessorTest {
 
         message.setBody(
                 FixtureHelpers.fixture("fixtures/sns_notification.json"));
-        final boolean actual = processor.process(message);
+        final boolean actual = processor.test(message);
 
         verify(broadcaster, times(2)).isEmpty();
         verify(broadcaster, never()).broadcast(any(OutboundEvent.class));
@@ -142,7 +142,7 @@ public class MessageProcessorTest {
 
         message.setBody(
                 FixtureHelpers.fixture("fixtures/sns_notification.json"));
-        final boolean actual = processor.process(message);
+        final boolean actual = processor.test(message);
 
         verify(broadcaster, times(2)).isEmpty();
         verify(broadcaster, never()).broadcast(any(OutboundEvent.class));
@@ -169,7 +169,7 @@ public class MessageProcessorTest {
 
         message.setBody(
                 FixtureHelpers.fixture("fixtures/sns_notification.json"));
-        final boolean actual = processor.process(message);
+        final boolean actual = processor.test(message);
 
         verify(broadcaster, times(12)).isEmpty();
         verify(broadcaster, times(10)).broadcast(any(OutboundEvent.class));
@@ -197,7 +197,7 @@ public class MessageProcessorTest {
 
         message.setBody(
                 FixtureHelpers.fixture("fixtures/sns_notification.json"));
-        final boolean actual = processor.process(message);
+        final boolean actual = processor.test(message);
 
         verify(broadcaster, times(3)).isEmpty();
         verify(broadcaster, times(1)).broadcast(any(OutboundEvent.class));
