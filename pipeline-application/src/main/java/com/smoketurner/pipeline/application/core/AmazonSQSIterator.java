@@ -121,9 +121,4 @@ public class AmazonSQSIterator implements Iterator<List<Message>> {
         }
         return false;
     }
-
-    @Override
-    public void remove() {
-        throw new UnsupportedOperationException("remove");
-    }
 }

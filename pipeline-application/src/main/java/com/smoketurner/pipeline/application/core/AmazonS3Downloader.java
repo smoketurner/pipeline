@@ -69,13 +69,10 @@ public class AmazonS3Downloader {
 
         final GetObjectRequest request = new GetObjectRequest(
                 object.getBucketName(), object.getKey());
-        if (object.getVersionId().isPresent()) {
-            request.setVersionId(object.getVersionId().get());
-        }
-        if (object.getETag().isPresent()) {
-            request.setMatchingETagConstraints(
-                    Collections.singletonList(object.getETag().get()));
-        }
+        object.getVersionId()
+                .ifPresent(versionId -> request.setVersionId(versionId));
+        object.getETag().ifPresent(etag -> request
+                .setMatchingETagConstraints(Collections.singletonList(etag)));
 
         LOGGER.debug("Fetching key: {}/{}", object.getBucketName(),
                 object.getKey());
