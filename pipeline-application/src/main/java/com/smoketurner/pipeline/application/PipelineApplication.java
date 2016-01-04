@@ -16,6 +16,8 @@
 package com.smoketurner.pipeline.application;
 
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.sqs.AmazonSQSClient;
 import com.codahale.metrics.MetricRegistry;
@@ -23,6 +25,7 @@ import com.smoketurner.pipeline.application.config.AwsConfiguration;
 import com.smoketurner.pipeline.application.config.PipelineConfiguration;
 import com.smoketurner.pipeline.application.core.AmazonS3Downloader;
 import com.smoketurner.pipeline.application.core.AmazonSQSIterator;
+import com.smoketurner.pipeline.application.core.HeartbeatRunnable;
 import com.smoketurner.pipeline.application.core.InstrumentedSseBroadcaster;
 import com.smoketurner.pipeline.application.core.MessageProcessor;
 import com.smoketurner.pipeline.application.core.PipelineRunnable;
@@ -84,6 +87,12 @@ public class PipelineApplication extends Application<PipelineConfiguration> {
         final PipelineRunnable runnable = new PipelineRunnable(processor,
                 sqsIterator, broadcaster);
         service.execute(runnable);
+
+        // send heartbeat pings every second to all connected clients
+        final ScheduledExecutorService scheduled = environment.lifecycle()
+                .scheduledExecutorService("heartbeat-%d").threads(1).build();
+        scheduled.scheduleAtFixedRate(new HeartbeatRunnable(broadcaster), 0, 1,
+                TimeUnit.SECONDS);
 
         // resources
         environment.jersey().register(new EventResource(broadcaster));

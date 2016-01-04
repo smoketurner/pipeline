@@ -28,7 +28,7 @@ public class PipelineRunnable implements Runnable {
 
     private static final Logger LOGGER = LoggerFactory
             .getLogger(PipelineRunnable.class);
-    private static final long NO_CONNECTIONS_SLEEP_SECS = 1;
+    private static final long DEFAULT_SLEEP_SECS = 1;
     private static final long SQS_FAILURE_SLEEP_SECS = 10;
 
     private final MessageProcessor processor;
@@ -57,55 +57,44 @@ public class PipelineRunnable implements Runnable {
     @Override
     public void run() {
         while (sqs.hasNext() && !Thread.currentThread().isInterrupted()) {
+            long sleepSeconds = DEFAULT_SLEEP_SECS;
 
-            // send heartbeat ping event to all connections to flush out
-            // disconnected clients
-            broadcaster.ping();
+            if (!broadcaster.isEmpty()) {
 
-            // if we don't have any connections, sleep then continue the main
-            // processing loop
-            if (broadcaster.isEmpty()) {
+                try {
+                    final List<Message> messages = sqs.next();
+
+                    // Process each SQS message in parallel. If the message was
+                    // successfully processed and all of the events in the S3
+                    // download were successfully broadcast, we can safely
+                    // delete the message.
+                    messages.parallelStream().filter(processor::test)
+                            .forEach(sqs::deleteMessage);
+
+                } catch (OverLimitException e) {
+                    LOGGER.error("Reached SQS request limit, sleeping for "
+                            + sleepSeconds + " seconds", e);
+                    sleepSeconds = SQS_FAILURE_SLEEP_SECS;
+                } catch (Exception e) {
+                    LOGGER.error(
+                            "Failed to request messages from SQS, sleeping for "
+                                    + sleepSeconds + " seconds",
+                            e);
+                    sleepSeconds = SQS_FAILURE_SLEEP_SECS;
+                }
+
+            } else {
                 LOGGER.info(
                         "No active connections found, sleeping for {} seconds",
-                        NO_CONNECTIONS_SLEEP_SECS);
-
-                try {
-                    TimeUnit.SECONDS.sleep(NO_CONNECTIONS_SLEEP_SECS);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
-
-                // go back up to the SQS loop
-                continue;
+                        sleepSeconds);
             }
 
-            // Request new messages from SQS and continue the loop upon failure
-            final List<Message> messages;
             try {
-                messages = sqs.next();
-            } catch (OverLimitException e) {
-                LOGGER.error("Reached SQS request limit, sleeping for "
-                        + SQS_FAILURE_SLEEP_SECS + " seconds", e);
-
-                try {
-                    TimeUnit.SECONDS.sleep(SQS_FAILURE_SLEEP_SECS);
-                } catch (InterruptedException ex) {
-                    Thread.currentThread().interrupt();
-                }
-
-                // go back up to the SQS loop
-                continue;
-            } catch (Exception e) {
-                LOGGER.error("Failed to request messages from SQS", e);
-                // go back up to the SQS loop
-                continue;
+                TimeUnit.SECONDS.sleep(sleepSeconds);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
             }
 
-            // Process each SQS message in parallel. If the message was
-            // successfully processed and all of the events in the S3 download
-            // were successfully broadcast, we can safely delete the message.
-            messages.parallelStream().filter(processor::test)
-                    .forEach(sqs::deleteMessage);
         }
     }
 }
