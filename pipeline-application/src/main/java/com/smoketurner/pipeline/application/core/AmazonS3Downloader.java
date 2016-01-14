@@ -135,9 +135,6 @@ public class AmazonS3Downloader {
         }
 
         final String key = Strings.nullToEmpty(object.getKey());
-        if (key.trim().toLowerCase().endsWith(GZIP_EXTENSION)) {
-            return true;
-        }
-        return false;
+        return key.trim().toLowerCase().endsWith(GZIP_EXTENSION);
     }
 }
