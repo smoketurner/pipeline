@@ -69,8 +69,7 @@ public class AmazonS3Downloader {
 
         final GetObjectRequest request = new GetObjectRequest(
                 object.getBucketName(), object.getKey());
-        object.getVersionId()
-                .ifPresent(versionId -> request.setVersionId(versionId));
+        object.getVersionId().ifPresent(request::setVersionId);
         object.getETag().ifPresent(etag -> request
                 .setMatchingETagConstraints(Collections.singletonList(etag)));
 
@@ -100,8 +99,11 @@ public class AmazonS3Downloader {
             try {
                 download.close();
             } catch (IOException e) {
-                LOGGER.error("Failed to close S3 stream for key: {}/{}",
-                        download.getBucketName(), download.getKey());
+                LOGGER.error(
+                        String.format(
+                                "Failed to close S3 stream for key: %s/%s",
+                                download.getBucketName(), download.getKey()),
+                        e);
             }
 
             LOGGER.debug("Object size is zero for key: {}/{}",

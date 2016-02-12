@@ -186,7 +186,7 @@ public class MessageProcessor implements Predicate<Message> {
                             StandardCharsets.UTF_8));
                 }
 
-                String line = null;
+                String line;
                 while ((line = reader.readLine()) != null) {
                     // skip empty lines
                     if (line.isEmpty()) {
