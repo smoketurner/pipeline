@@ -2,7 +2,7 @@ Pipeline
 ========
 [![Build Status](https://travis-ci.org/smoketurner/pipeline.svg?branch=master)](https://travis-ci.org/smoketurner/pipeline)
 [![Coverage Status](https://coveralls.io/repos/smoketurner/pipeline/badge.svg?branch=master&service=github)](https://coveralls.io/github/smoketurner/pipeline?branch=master)
-[![Maven Central](https://img.shields.io/maven-central/v/com.smoketurner.pipeline/notification-parent.svg?style=flat-square)](https://maven-badges.herokuapp.com/maven-central/com.smoketurner.pipeline/pipeline-parent/)
+[![Maven Central](https://img.shields.io/maven-central/v/com.smoketurner.pipeline/pipeline-parent.svg?style=flat-square)](https://maven-badges.herokuapp.com/maven-central/com.smoketurner.pipeline/pipeline-parent/)
 [![GitHub license](https://img.shields.io/github/license/smoketurner/pipeline.svg?style=flat-square)](https://github.com/smoketurner/pipeline/tree/master)
 
 Pipeline is an implementation of an event pipeline using [Amazon Web Services](https://aws.amazon.com) (AWS) [Simple Storage Service](http://aws.amazon.com/s3/) (S3) and [Simple Queue Service](http://aws.amazon.com/sqs/) (SQS). S3 can be configured to publish a notification to the [Simple Notification Service](http://aws.amazon.com/sns/) (SNS) whenever a new object is created in a bucket. SNS can then publish the notification into an SQS queue which Pipeline will consume from. Pipeline will consume from the SQS queue, then download the object from S3, optionally decompress it, then emit each line of data over a [server-sent events](https://en.wikipedia.org/wiki/Server-sent_events) (SSE) HTTP endpoint.
