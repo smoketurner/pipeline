@@ -123,10 +123,18 @@ public class MessageProcessor implements Predicate<Message> {
                     notification.getTimestamp());
         }
 
+        // if we don't have a valid SNS notification, try parsing the body as S3
+        // event records
+        final String body;
+        if (notification.isValid()) {
+            body = notification.getMessage();
+        } else {
+            body = message.getBody();
+        }
+
         final AmazonEventRecords records;
         try {
-            records = MAPPER.readValue(notification.getMessage(),
-                    AmazonEventRecords.class);
+            records = MAPPER.readValue(body, AmazonEventRecords.class);
         } catch (IOException e) {
             LOGGER.error(
                     "Failed to parse S3 event records, deleting SQS message",
