@@ -68,7 +68,7 @@ public class AwsConfiguration {
             clientConfig.setProxyPort(proxy.get().getPort());
         }
         clientConfig.setUseTcpKeepAlive(true);
-        clientConfig.setUseGzip(false);
+        clientConfig.setUseGzip(true);
         return clientConfig;
     }
 
