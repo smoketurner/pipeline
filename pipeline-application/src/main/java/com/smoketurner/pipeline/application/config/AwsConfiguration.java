@@ -68,7 +68,8 @@ public class AwsConfiguration {
             clientConfig.setProxyPort(proxy.get().getPort());
         }
         clientConfig.setUseTcpKeepAlive(true);
-        clientConfig.setUseGzip(true);
+        // needs to be false to support streaming gunzipping
+        clientConfig.setUseGzip(false);
         return clientConfig;
     }
 

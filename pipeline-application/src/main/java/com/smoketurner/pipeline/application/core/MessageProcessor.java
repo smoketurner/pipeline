@@ -28,6 +28,7 @@ import javax.ws.rs.core.MediaType;
 import org.glassfish.jersey.media.sse.OutboundEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import com.amazonaws.services.s3.model.AmazonS3Exception;
 import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectInputStream;
 import com.amazonaws.services.sqs.model.Message;
@@ -174,6 +175,17 @@ public class MessageProcessor implements Predicate<Message> {
                         e);
                 recordsProcessed++;
                 continue;
+            } catch (AmazonS3Exception e) {
+                if (e.getStatusCode() == 404) {
+                    LOGGER.warn(
+                            "File does not exist in S3, skipping to next record",
+                            e);
+                    recordsProcessed++;
+                    continue;
+                }
+                LOGGER.error("Amazon S3 exception, skipping remaining records",
+                        e);
+                return false;
             } catch (Exception e) {
                 LOGGER.error(
                         "Failed to download file from S3, skipping remaining records",
