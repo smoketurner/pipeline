@@ -5,6 +5,7 @@
 aws:
 
   queueUrl: TBD
+  region: us-east-1
 
 # Swagger-specific options.
 swagger:

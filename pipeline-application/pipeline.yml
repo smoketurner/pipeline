@@ -2,6 +2,7 @@
 aws:
 
   queueUrl: https://sqs.us-east-1.amazonaws.com/860114833029/smoketurner-queue
+  region: us-east-1
 
 # Swagger-specific options.
 swagger:

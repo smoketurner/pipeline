@@ -15,16 +15,23 @@
  */
 package com.smoketurner.pipeline.application.config;
 
+import java.util.Objects;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import org.hibernate.validator.constraints.NotEmpty;
 import org.hibernate.validator.valuehandling.UnwrapValidatedValue;
 import com.amazonaws.ClientConfiguration;
+import com.amazonaws.auth.AWSCredentialsProvider;
+import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
+import com.amazonaws.regions.Region;
+import com.amazonaws.regions.Regions;
+import com.amazonaws.regions.ServiceAbbreviations;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.sqs.AmazonSQSClient;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Optional;
+import com.google.common.base.Preconditions;
 import com.google.common.net.HostAndPort;
 import com.smoketurner.pipeline.application.managed.AmazonS3ClientManager;
 import com.smoketurner.pipeline.application.managed.AmazonSQSClientManager;
@@ -39,6 +46,12 @@ public class AwsConfiguration {
     @Valid
     @UnwrapValidatedValue(false)
     private Optional<HostAndPort> proxy = Optional.absent();
+
+    @NotNull
+    private Regions region = Regions.DEFAULT_REGION;
+
+    @NotNull
+    private AWSCredentialsProvider provider = new DefaultAWSCredentialsProviderChain();
 
     @JsonProperty
     public String getQueueUrl() {
@@ -60,6 +73,26 @@ public class AwsConfiguration {
         this.proxy = proxy;
     }
 
+    @JsonProperty
+    public Regions getRegion() {
+        return region;
+    }
+
+    @JsonProperty
+    public void setRegion(Regions region) {
+        this.region = region;
+    }
+
+    @JsonProperty("provider")
+    public AWSCredentialsProvider getAWSCredentialsProvider() {
+        return provider;
+    }
+
+    @JsonProperty("provider")
+    public void setAWSCredentialsProvider(AWSCredentialsProvider provider) {
+        this.provider = provider;
+    }
+
     @JsonIgnore
     public ClientConfiguration getClientConfiguration() {
         final ClientConfiguration clientConfig = new ClientConfiguration();
@@ -73,16 +106,34 @@ public class AwsConfiguration {
         return clientConfig;
     }
 
+    @JsonIgnore
     public AmazonS3Client buildS3(final Environment environment) {
+        final Region region = Region.getRegion(this.region);
+        Objects.requireNonNull(region);
+
+        Preconditions.checkArgument(
+                region.isServiceSupported(ServiceAbbreviations.S3),
+                "S3 is not supported in " + region);
+
         final ClientConfiguration clientConfig = getClientConfiguration();
-        final AmazonS3Client s3 = new AmazonS3Client(clientConfig);
+        final AmazonS3Client s3 = region.createClient(AmazonS3Client.class,
+                provider, clientConfig);
         environment.lifecycle().manage(new AmazonS3ClientManager(s3));
         return s3;
     }
 
+    @JsonIgnore
     public AmazonSQSClient buildSQS(final Environment environment) {
+        final Region region = Region.getRegion(this.region);
+        Objects.requireNonNull(region);
+
+        Preconditions.checkArgument(
+                region.isServiceSupported(ServiceAbbreviations.SQS),
+                "SQS is not supported in " + region);
+
         final ClientConfiguration clientConfig = getClientConfiguration();
-        final AmazonSQSClient sqs = new AmazonSQSClient(clientConfig);
+        final AmazonSQSClient sqs = region.createClient(AmazonSQSClient.class,
+                provider, clientConfig);
         environment.lifecycle().manage(new AmazonSQSClientManager(sqs));
         return sqs;
     }
