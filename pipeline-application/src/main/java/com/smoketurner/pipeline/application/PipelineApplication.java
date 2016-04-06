@@ -91,9 +91,9 @@ public class PipelineApplication extends Application<PipelineConfiguration> {
         service.execute(runnable);
 
         // send heartbeat pings every second to all connected clients
-        final ScheduledExecutorService scheduled = environment.lifecycle()
+        final ScheduledExecutorService scheduler = environment.lifecycle()
                 .scheduledExecutorService("heartbeat-%d").threads(1).build();
-        scheduled.scheduleAtFixedRate(new HeartbeatRunnable(broadcaster), 0, 1,
+        scheduler.scheduleAtFixedRate(new HeartbeatRunnable(broadcaster), 0, 1,
                 TimeUnit.SECONDS);
 
         // resources
