@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -34,6 +35,7 @@ import com.amazonaws.services.s3.model.S3ObjectInputStream;
 import com.amazonaws.services.sqs.model.Message;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.SharedMetricRegistries;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.smoketurner.pipeline.application.aws.AmazonEventRecord;
 import com.smoketurner.pipeline.application.aws.AmazonEventRecords;
@@ -59,19 +61,18 @@ public class MessageProcessor implements Predicate<Message> {
     /**
      * Constructor
      *
-     * @param registry
-     *            Metric registry
      * @param s3
      *            S3 Downloader
      * @param broadcaster
      *            SSE broadcaster
      */
-    public MessageProcessor(@Nonnull final MetricRegistry registry,
-            @Nonnull final AmazonS3Downloader s3,
+    public MessageProcessor(@Nonnull final AmazonS3Downloader s3,
             @Nonnull final InstrumentedSseBroadcaster broadcaster) {
-        Objects.requireNonNull(registry);
         this.s3 = Objects.requireNonNull(s3);
         this.broadcaster = Objects.requireNonNull(broadcaster);
+
+        final MetricRegistry registry = SharedMetricRegistries
+                .getOrCreate("default");
         this.recordCounts = registry
                 .histogram(name(MessageProcessor.class, "record-counts"));
         this.eventCounts = registry
@@ -193,7 +194,7 @@ public class MessageProcessor implements Predicate<Message> {
                 return false;
             }
 
-            int eventCount = 0;
+            final AtomicInteger eventCount = new AtomicInteger(0);
             try (S3ObjectInputStream input = download.getObjectContent()) {
 
                 final BufferedReader reader;
@@ -206,29 +207,21 @@ public class MessageProcessor implements Predicate<Message> {
                             StandardCharsets.UTF_8));
                 }
 
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    // skip empty lines
-                    if (line.isEmpty()) {
-                        continue;
-                    }
+                // failed will be true if we did not successfully broadcast all
+                // of the events because of no consumers
+                final boolean failed = reader.lines()
+                        .map(line -> event.data(line).build())
+                        .peek(event -> eventCount.incrementAndGet())
+                        .anyMatch(broadcaster::test);
 
-                    eventCount++;
-
-                    broadcaster.broadcast(event.data(line).build());
-
-                    // If we have no active connections, assume the broadcast
-                    // failed
-                    if (broadcaster.isEmpty()) {
-                        LOGGER.error("No connections found, aborting download");
-                        // abort the current S3 download
-                        input.abort();
-                        LOGGER.error(
-                                "Partial events broadcast ({} sent) from key: {}/{}",
-                                eventCount, download.getBucketName(),
-                                download.getKey());
-                        return false;
-                    }
+                if (failed) {
+                    // abort the current S3 download
+                    input.abort();
+                    LOGGER.error(
+                            "Partial events broadcast ({} sent) from key: {}/{}",
+                            eventCount.get(), download.getBucketName(),
+                            download.getKey());
+                    return false;
                 }
 
             } catch (IOException e) {
@@ -237,7 +230,7 @@ public class MessageProcessor implements Predicate<Message> {
                 return false;
             }
 
-            eventCounts.update(eventCount);
+            eventCounts.update(eventCount.get());
 
             LOGGER.debug("Broadcast {} events from key: {}/{}", eventCount,
                     download.getBucketName(), download.getKey());
@@ -253,6 +246,8 @@ public class MessageProcessor implements Predicate<Message> {
             return true;
         }
 
+        LOGGER.debug("Processed {} of {} records, not deleting SQS message",
+                recordsProcessed, recordCount);
         return false;
     }
 }

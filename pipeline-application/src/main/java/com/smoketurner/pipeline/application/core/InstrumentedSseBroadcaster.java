@@ -16,9 +16,8 @@
 package com.smoketurner.pipeline.application.core;
 
 import static com.codahale.metrics.MetricRegistry.name;
-import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
-import javax.annotation.Nonnull;
+import java.util.function.Predicate;
 import org.glassfish.jersey.media.sse.OutboundEvent;
 import org.glassfish.jersey.media.sse.SseBroadcaster;
 import org.glassfish.jersey.server.ChunkedOutput;
@@ -28,7 +27,8 @@ import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.SharedMetricRegistries;
 
-public class InstrumentedSseBroadcaster extends SseBroadcaster {
+public class InstrumentedSseBroadcaster extends SseBroadcaster
+        implements Predicate<OutboundEvent> {
 
     private static final Logger LOGGER = LoggerFactory
             .getLogger(InstrumentedSseBroadcaster.class);
@@ -83,6 +83,31 @@ public class InstrumentedSseBroadcaster extends SseBroadcaster {
         super.broadcast(chunk);
         eventRate.mark();
         LOGGER.trace("sent event");
+    }
+
+    /**
+     * Broadcasts an event to all connected consumers.
+     * 
+     * @param chunk
+     *            Event to broadcast
+     * @return true if there were no connected consumers before or after
+     *         broadcasting, otherwise false
+     */
+    @Override
+    public boolean test(OutboundEvent chunk) {
+        if (isEmpty()) {
+            LOGGER.trace("No consumers, returning true");
+            return true;
+        }
+
+        broadcast(chunk);
+
+        if (isEmpty()) {
+            LOGGER.trace("No consumers, returning true");
+            return true;
+        }
+        LOGGER.trace("Successfully broadcast event, returning false");
+        return false;
     }
 
     /**

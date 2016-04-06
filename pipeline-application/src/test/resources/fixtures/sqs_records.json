@@ -1,0 +1,38 @@
+{
+  "Records": [
+    {
+      "eventVersion": "2.0",
+      "eventSource": "aws:s3",
+      "awsRegion": "us-east-1",
+      "eventTime": "2015-11-10T22:49:44.111Z",
+      "eventName": "ObjectCreated:Put",
+      "userIdentity": {
+        "principalId": "A3CRXGOJ1ZPC4A"
+      },
+      "requestParameters": {
+        "sourceIPAddress": "127.0.0.1"
+      },
+      "responseElements": {
+        "x-amz-request-id": "49255A18DF1CAA36",
+        "x-amz-id-2": "NhI3XC84PX18izkHNUtu76hod2Ssrmjfw6UznoxLYBMNV6rKI2JAIUBLfAQ8KMC7"
+      },
+      "s3":{
+        "s3SchemaVersion": "1.0",
+        "configurationId": "118d0b91-dff3-40e2-8940-81e7f71bdb1a",
+        "bucket": {
+          "name": "smoketurner-uploads",
+          "ownerIdentity": {
+            "principalId": "A3CRXGOJ1ZPC4A"
+          },
+          "arn": "arn:aws:s3:::smoketurner-uploads"
+        },
+        "object": {
+          "key": "events/testing.json.gz",
+          "size": 648,
+          "eTag": "181ce4ff68b22a45f8e5e763f361a96c",
+          "sequencer": "005642748811458220"
+        }
+      }
+    }
+  ]
+}
