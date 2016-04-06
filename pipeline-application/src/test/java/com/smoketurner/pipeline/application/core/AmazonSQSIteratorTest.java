@@ -28,14 +28,13 @@ import com.amazonaws.services.sqs.AmazonSQSClient;
 import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import com.amazonaws.services.sqs.model.ReceiveMessageResult;
-import com.codahale.metrics.MetricRegistry;
 
 public class AmazonSQSIteratorTest {
 
     private static final String QUEUE_URL = "http://sqs/test";
     private final AmazonSQSClient mockSQS = mock(AmazonSQSClient.class);
     private final AmazonSQSIterator iterator = new AmazonSQSIterator(mockSQS,
-            QUEUE_URL, new MetricRegistry());
+            QUEUE_URL);
 
     @Test
     public void testHasNext() throws Exception {

@@ -20,7 +20,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.sqs.AmazonSQSClient;
-import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.SharedMetricRegistries;
 import com.smoketurner.pipeline.application.config.AwsConfiguration;
 import com.smoketurner.pipeline.application.config.PipelineConfiguration;
 import com.smoketurner.pipeline.application.core.AmazonS3Downloader;
@@ -64,7 +64,7 @@ public class PipelineApplication extends Application<PipelineConfiguration> {
     public void run(final PipelineConfiguration configuration,
             final Environment environment) throws Exception {
 
-        final MetricRegistry registry = environment.metrics();
+        SharedMetricRegistries.add("default", environment.metrics());
 
         // AWS clients
         final AwsConfiguration awsConfig = configuration.getAws();
@@ -72,14 +72,14 @@ public class PipelineApplication extends Application<PipelineConfiguration> {
         final AmazonSQSClient sqs = awsConfig.buildSQS(environment);
 
         final AmazonSQSIterator sqsIterator = new AmazonSQSIterator(sqs,
-                awsConfig.getQueueUrl(), registry);
+                awsConfig.getQueueUrl());
         final AmazonS3Downloader s3Downloader = new AmazonS3Downloader(s3);
 
-        final InstrumentedSseBroadcaster broadcaster = new InstrumentedSseBroadcaster(
-                registry);
+        // SSE message broadcaster
+        final InstrumentedSseBroadcaster broadcaster = new InstrumentedSseBroadcaster();
 
-        final MessageProcessor processor = new MessageProcessor(registry,
-                s3Downloader, broadcaster);
+        final MessageProcessor processor = new MessageProcessor(s3Downloader,
+                broadcaster);
 
         final ExecutorService service = environment.lifecycle()
                 .executorService("sqs-%d").minThreads(1).build();

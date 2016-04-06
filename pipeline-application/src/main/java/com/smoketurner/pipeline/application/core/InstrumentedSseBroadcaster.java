@@ -26,6 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.SharedMetricRegistries;
 
 public class InstrumentedSseBroadcaster extends SseBroadcaster {
 
@@ -39,13 +40,11 @@ public class InstrumentedSseBroadcaster extends SseBroadcaster {
 
     /**
      * Constructor
-     *
-     * @param registry
-     *            Metric Registry
      */
-    public InstrumentedSseBroadcaster(@Nonnull final MetricRegistry registry) {
+    public InstrumentedSseBroadcaster() {
         super();
-        Objects.requireNonNull(registry);
+        final MetricRegistry registry = SharedMetricRegistries
+                .getOrCreate("default");
         this.pingRate = registry
                 .meter(name(SseBroadcaster.class, "broadcast", "ping-sends"));
         this.eventRate = registry

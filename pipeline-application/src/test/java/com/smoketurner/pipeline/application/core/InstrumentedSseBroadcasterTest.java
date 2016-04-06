@@ -18,16 +18,12 @@ package com.smoketurner.pipeline.application.core;
 import static org.assertj.core.api.Assertions.assertThat;
 import org.glassfish.jersey.media.sse.EventOutput;
 import org.junit.Test;
-import com.codahale.metrics.MetricRegistry;
 
 public class InstrumentedSseBroadcasterTest {
 
-    private final MetricRegistry registry = new MetricRegistry();
-
     @Test
     public void testAdd() {
-        final InstrumentedSseBroadcaster broadcaster = new InstrumentedSseBroadcaster(
-                registry);
+        final InstrumentedSseBroadcaster broadcaster = new InstrumentedSseBroadcaster();
         assertThat(broadcaster.isEmpty()).isTrue();
         final EventOutput output = new EventOutput();
         broadcaster.add(output);

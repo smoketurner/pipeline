@@ -30,6 +30,7 @@ import com.amazonaws.services.sqs.model.ReceiveMessageResult;
 import com.codahale.metrics.Counter;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.SharedMetricRegistries;
 
 public class AmazonSQSIterator implements Iterator<List<Message>> {
 
@@ -54,15 +55,15 @@ public class AmazonSQSIterator implements Iterator<List<Message>> {
      *            SQS client
      * @param queueUrl
      *            Queue URL
-     * @param registry
-     *            Metric Registry
      */
     public AmazonSQSIterator(@Nonnull final AmazonSQSClient client,
-            @Nonnull final String queueUrl,
-            @Nonnull final MetricRegistry registry) {
-        Objects.requireNonNull(registry);
+            @Nonnull final String queueUrl) {
+
         this.client = Objects.requireNonNull(client);
         this.queueUrl = Objects.requireNonNull(queueUrl);
+
+        final MetricRegistry registry = SharedMetricRegistries
+                .getOrCreate("default");
 
         this.receiveRequests = registry
                 .counter(name(AmazonSQSIterator.class, "receive-requests"));
@@ -76,7 +77,7 @@ public class AmazonSQSIterator implements Iterator<List<Message>> {
                 .withVisibilityTimeout(VISIBILITY_TIMEOUT_SECS)
                 .withWaitTimeSeconds(WAIT_TIME_SECS);
 
-        LOGGER.info("SQS Queue URL: {}", queueUrl);
+        LOGGER.info("Using: {}", queueUrl);
     }
 
     @Override

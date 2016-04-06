@@ -32,7 +32,6 @@ import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectInputStream;
 import com.amazonaws.services.sqs.model.Message;
-import com.codahale.metrics.MetricRegistry;
 import com.google.common.io.Resources;
 import com.smoketurner.pipeline.application.aws.AmazonEventRecord;
 import com.smoketurner.pipeline.application.exceptions.AmazonS3ConstraintException;
@@ -44,8 +43,8 @@ public class MessageProcessorTest {
     private final AmazonS3Downloader s3 = mock(AmazonS3Downloader.class);
     private final InstrumentedSseBroadcaster broadcaster = mock(
             InstrumentedSseBroadcaster.class);
-    private final MessageProcessor processor = new MessageProcessor(
-            new MetricRegistry(), s3, broadcaster);
+    private final MessageProcessor processor = new MessageProcessor(s3,
+            broadcaster);
     private Message message;
 
     @Before
