@@ -41,6 +41,8 @@ import io.federecio.dropwizard.swagger.SwaggerBundleConfiguration;
 public class PipelineApplication extends Application<PipelineConfiguration> {
 
     public static void main(final String[] args) throws Exception {
+        // http://docs.aws.amazon.com/AWSSdkDocsJava/latest/DeveloperGuide/java-dg-jvm-ttl.html
+        java.security.Security.setProperty("networkaddress.cache.ttl", "60");
         new PipelineApplication().run(args);
     }
 
