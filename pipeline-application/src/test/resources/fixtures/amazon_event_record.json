@@ -28,8 +28,7 @@
             "key": "object-key",
             "size": 100,
             "eTag": "object eTag",
-            "versionId": "object version",
-            "sequencer": "event sequence"
+            "versionId": "object version"
         }
     }
 }

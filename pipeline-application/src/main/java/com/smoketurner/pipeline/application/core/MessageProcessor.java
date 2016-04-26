@@ -29,6 +29,9 @@ import javax.ws.rs.core.MediaType;
 import org.glassfish.jersey.media.sse.OutboundEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import com.amazonaws.AmazonClientException;
+import com.amazonaws.services.s3.event.S3EventNotification;
+import com.amazonaws.services.s3.event.S3EventNotification.S3EventNotificationRecord;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
 import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectInputStream;
@@ -37,8 +40,6 @@ import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.SharedMetricRegistries;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.smoketurner.pipeline.application.aws.AmazonEventRecord;
-import com.smoketurner.pipeline.application.aws.AmazonEventRecords;
 import com.smoketurner.pipeline.application.aws.AmazonSNSNotification;
 import com.smoketurner.pipeline.application.exceptions.AmazonS3ConstraintException;
 import com.smoketurner.pipeline.application.exceptions.AmazonS3ZeroSizeException;
@@ -134,10 +135,10 @@ public class MessageProcessor implements Predicate<Message> {
             body = message.getBody();
         }
 
-        final AmazonEventRecords records;
+        final S3EventNotification records;
         try {
-            records = MAPPER.readValue(body, AmazonEventRecords.class);
-        } catch (IOException e) {
+            records = S3EventNotification.parseJson(body);
+        } catch (AmazonClientException e) {
             LOGGER.error(
                     "Failed to parse S3 event records, deleting SQS message",
                     e);
@@ -158,7 +159,7 @@ public class MessageProcessor implements Predicate<Message> {
 
         int recordsProcessed = 0;
 
-        for (AmazonEventRecord record : records.getRecords()) {
+        for (S3EventNotificationRecord record : records.getRecords()) {
             if (broadcaster.isEmpty()) {
                 LOGGER.debug("No connections found, not downloading from S3");
                 return false;

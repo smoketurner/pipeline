@@ -15,33 +15,36 @@
  */
 package com.smoketurner.pipeline.application.convert;
 
+import java.util.Optional;
+import com.amazonaws.services.s3.event.S3EventNotification.S3BucketEntity;
+import com.amazonaws.services.s3.event.S3EventNotification.S3Entity;
+import com.amazonaws.services.s3.event.S3EventNotification.S3EventNotificationRecord;
+import com.amazonaws.services.s3.event.S3EventNotification.S3ObjectEntity;
 import com.google.common.base.Converter;
-import com.smoketurner.pipeline.application.aws.AmazonEventRecord;
-import com.smoketurner.pipeline.application.aws.AmazonEventRecordS3;
-import com.smoketurner.pipeline.application.aws.AmazonEventRecordS3Bucket;
-import com.smoketurner.pipeline.application.aws.AmazonEventRecordS3Object;
 import com.smoketurner.pipeline.application.core.AmazonS3Object;
 
 public class AmazonS3ObjectConverter
-        extends Converter<AmazonEventRecord, AmazonS3Object> {
+        extends Converter<S3EventNotificationRecord, AmazonS3Object> {
 
     @Override
-    protected AmazonS3Object doForward(AmazonEventRecord a) {
-        final AmazonEventRecordS3 s3 = a.getS3();
-        final AmazonEventRecordS3Object object = s3.getObject();
+    protected AmazonS3Object doForward(S3EventNotificationRecord a) {
+        final S3Entity s3 = a.getS3();
+        final S3ObjectEntity object = s3.getObject();
         return new AmazonS3Object(a.getAwsRegion(), s3.getBucket().getName(),
-                object.getKey(), object.getSize(), object.getEtag(),
-                object.getVersionId());
+                object.getKey(), object.getSizeAsLong(),
+                Optional.ofNullable(object.geteTag()),
+                Optional.ofNullable(object.getVersionId()));
     }
 
     @Override
-    protected AmazonEventRecord doBackward(AmazonS3Object b) {
-        final AmazonEventRecordS3Bucket bucket = new AmazonEventRecordS3Bucket(
-                b.getBucketName());
-        final AmazonEventRecordS3Object object = new AmazonEventRecordS3Object(
-                b.getKey(), b.getSize(), b.getETag().orElse(null),
-                b.getVersionId().orElse(null), null);
-        final AmazonEventRecordS3 s3 = new AmazonEventRecordS3(bucket, object);
-        return new AmazonEventRecord(null, null, null, null, null, s3);
+    protected S3EventNotificationRecord doBackward(AmazonS3Object b) {
+        final S3BucketEntity bucket = new S3BucketEntity(b.getBucketName(),
+                null, null);
+        final S3ObjectEntity object = new S3ObjectEntity(b.getKey(),
+                b.getSize(), b.getETag().orElse(null),
+                b.getVersionId().orElse(null));
+        final S3Entity s3 = new S3Entity(null, bucket, object, null);
+        return new S3EventNotificationRecord(null, null, null, null, null, null,
+                null, s3, null);
     }
 }

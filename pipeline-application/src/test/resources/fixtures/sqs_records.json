@@ -29,8 +29,7 @@
         "object": {
           "key": "events/testing.json.gz",
           "size": 648,
-          "eTag": "181ce4ff68b22a45f8e5e763f361a96c",
-          "sequencer": "005642748811458220"
+          "eTag": "181ce4ff68b22a45f8e5e763f361a96c"
         }
       }
     }

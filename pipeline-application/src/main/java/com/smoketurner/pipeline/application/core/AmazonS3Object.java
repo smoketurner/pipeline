@@ -26,7 +26,7 @@ public final class AmazonS3Object {
     private final String region;
     private final String bucketName;
     private final String key;
-    private final int size;
+    private final long size;
     private final String eTag;
     private final String versionId;
 
@@ -47,7 +47,7 @@ public final class AmazonS3Object {
      *            S3 object version ID
      */
     public AmazonS3Object(final String region, final String bucketName,
-            final String key, final int size, final Optional<String> eTag,
+            final String key, final long size, final Optional<String> eTag,
             final Optional<String> versionId) {
         this.region = Objects.requireNonNull(region);
         this.bucketName = Objects.requireNonNull(bucketName);
@@ -77,7 +77,7 @@ public final class AmazonS3Object {
         return key;
     }
 
-    public int getSize() {
+    public long getSize() {
         return size;
     }
 
