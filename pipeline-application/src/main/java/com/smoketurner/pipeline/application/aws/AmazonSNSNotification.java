@@ -33,6 +33,12 @@ public final class AmazonSNSNotification {
     private final String message;
     private final DateTime timestamp;
 
+    /**
+     * Constructor
+     *
+     * @param message
+     * @param timestamp
+     */
     @JsonCreator
     public AmazonSNSNotification(@JsonProperty("Message") final String message,
             @JsonProperty("Timestamp") final DateTime timestamp) {
