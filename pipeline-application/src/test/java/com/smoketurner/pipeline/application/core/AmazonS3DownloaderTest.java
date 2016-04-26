@@ -27,13 +27,13 @@ import org.junit.Test;
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.event.S3EventNotification.S3BucketEntity;
+import com.amazonaws.services.s3.event.S3EventNotification.S3Entity;
+import com.amazonaws.services.s3.event.S3EventNotification.S3EventNotificationRecord;
+import com.amazonaws.services.s3.event.S3EventNotification.S3ObjectEntity;
 import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.S3Object;
-import com.smoketurner.pipeline.application.aws.AmazonEventRecord;
-import com.smoketurner.pipeline.application.aws.AmazonEventRecordS3;
-import com.smoketurner.pipeline.application.aws.AmazonEventRecordS3Bucket;
-import com.smoketurner.pipeline.application.aws.AmazonEventRecordS3Object;
 import com.smoketurner.pipeline.application.exceptions.AmazonS3ConstraintException;
 import com.smoketurner.pipeline.application.exceptions.AmazonS3ZeroSizeException;
 
@@ -42,20 +42,19 @@ public class AmazonS3DownloaderTest {
     private final AmazonS3Client mockS3 = mock(AmazonS3Client.class);
     private final AmazonS3Downloader downloader = new AmazonS3Downloader(
             mockS3);
-    private AmazonEventRecord record;
+    private S3EventNotificationRecord record;
 
     @Before
     public void setUp() {
         reset(mockS3);
 
-        final AmazonEventRecordS3Bucket bucket = new AmazonEventRecordS3Bucket(
-                "bucket-name");
-        final AmazonEventRecordS3Object object = new AmazonEventRecordS3Object(
-                "object-key", 100, "object eTag", "object version",
-                "event sequence");
-        final AmazonEventRecordS3 s3 = new AmazonEventRecordS3(bucket, object);
-        record = new AmazonEventRecord("2.0", "aws:s3", "us-east-1",
-                "1970-01-01T00:00:00.000Z", "event-type", s3);
+        final S3BucketEntity bucket = new S3BucketEntity("bucket-name", null,
+                null);
+        final S3ObjectEntity object = new S3ObjectEntity("object-key", 100L,
+                "object eTag", "object version");
+        final S3Entity s3 = new S3Entity(null, bucket, object, null);
+        record = new S3EventNotificationRecord("us-east-1", null, "aws:s3",
+                "1970-01-01T00:00:00.000Z", "2.0", null, null, s3, null);
     }
 
     @Test

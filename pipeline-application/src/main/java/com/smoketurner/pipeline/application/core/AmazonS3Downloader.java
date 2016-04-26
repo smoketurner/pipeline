@@ -24,10 +24,10 @@ import org.slf4j.LoggerFactory;
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.event.S3EventNotification.S3EventNotificationRecord;
 import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.S3Object;
 import com.google.common.base.Strings;
-import com.smoketurner.pipeline.application.aws.AmazonEventRecord;
 import com.smoketurner.pipeline.application.convert.AmazonS3ObjectConverter;
 import com.smoketurner.pipeline.application.exceptions.AmazonS3ConstraintException;
 import com.smoketurner.pipeline.application.exceptions.AmazonS3ZeroSizeException;
@@ -62,7 +62,7 @@ public class AmazonS3Downloader {
      * @throws AmazonS3ZeroSizeException
      *             if the file size of the object is zero
      */
-    public S3Object fetch(@Nonnull final AmazonEventRecord record)
+    public S3Object fetch(@Nonnull final S3EventNotificationRecord record)
             throws AmazonS3ConstraintException, AmazonS3ZeroSizeException {
         final AmazonS3Object object = converter
                 .convert(Objects.requireNonNull(record));

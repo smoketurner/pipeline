@@ -17,8 +17,8 @@ package com.smoketurner.pipeline.application.convert;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.Test;
+import com.amazonaws.services.s3.event.S3EventNotification.S3EventNotificationRecord;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.smoketurner.pipeline.application.aws.AmazonEventRecord;
 import com.smoketurner.pipeline.application.core.AmazonS3Object;
 import io.dropwizard.testing.FixtureHelpers;
 
@@ -28,9 +28,9 @@ public class AmazonS3ObjectConverterTest {
 
     @Test
     public void testConverter() throws Exception {
-        final AmazonEventRecord record = MAPPER.readValue(
+        final S3EventNotificationRecord record = MAPPER.readValue(
                 FixtureHelpers.fixture("fixtures/amazon_event_record.json"),
-                AmazonEventRecord.class);
+                S3EventNotificationRecord.class);
         final AmazonS3Object actual = converter.convert(record);
         assertThat(actual.getRegion()).isEqualTo("us-east-1");
         assertThat(actual.getBucketName()).isEqualTo("bucket-name");

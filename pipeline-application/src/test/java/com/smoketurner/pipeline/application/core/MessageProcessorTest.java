@@ -28,12 +28,12 @@ import org.glassfish.jersey.media.sse.OutboundEvent;
 import org.junit.Before;
 import org.junit.Test;
 import com.amazonaws.AmazonServiceException;
+import com.amazonaws.services.s3.event.S3EventNotification.S3EventNotificationRecord;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectInputStream;
 import com.amazonaws.services.sqs.model.Message;
 import com.google.common.io.Resources;
-import com.smoketurner.pipeline.application.aws.AmazonEventRecord;
 import com.smoketurner.pipeline.application.exceptions.AmazonS3ConstraintException;
 import com.smoketurner.pipeline.application.exceptions.AmazonS3ZeroSizeException;
 import io.dropwizard.testing.FixtureHelpers;
@@ -61,7 +61,7 @@ public class MessageProcessorTest {
 
         verify(broadcaster, never()).isEmpty();
         verify(broadcaster, never()).broadcast(any(OutboundEvent.class));
-        verify(s3, never()).fetch(any(AmazonEventRecord.class));
+        verify(s3, never()).fetch(any(S3EventNotificationRecord.class));
         assertThat(actual).isFalse();
     }
 
@@ -72,7 +72,7 @@ public class MessageProcessorTest {
 
         verify(broadcaster).isEmpty();
         verify(broadcaster, never()).test(any(OutboundEvent.class));
-        verify(s3, never()).fetch(any(AmazonEventRecord.class));
+        verify(s3, never()).fetch(any(S3EventNotificationRecord.class));
         assertThat(actual).isFalse();
     }
 
@@ -83,14 +83,14 @@ public class MessageProcessorTest {
 
         verify(broadcaster).isEmpty();
         verify(broadcaster, never()).test(any(OutboundEvent.class));
-        verify(s3, never()).fetch(any(AmazonEventRecord.class));
+        verify(s3, never()).fetch(any(S3EventNotificationRecord.class));
         assertThat(actual).isTrue();
     }
 
     @Test
     public void testProcessS3EventFetchFailure() throws Exception {
         when(broadcaster.isEmpty()).thenReturn(false);
-        when(s3.fetch(any(AmazonEventRecord.class)))
+        when(s3.fetch(any(S3EventNotificationRecord.class)))
                 .thenThrow(new AmazonServiceException("error"));
 
         message.setBody(
@@ -99,7 +99,7 @@ public class MessageProcessorTest {
 
         verify(broadcaster, times(2)).isEmpty();
         verify(broadcaster, never()).test(any(OutboundEvent.class));
-        verify(s3).fetch(any(AmazonEventRecord.class));
+        verify(s3).fetch(any(S3EventNotificationRecord.class));
         assertThat(actual).isFalse();
     }
 
@@ -113,14 +113,14 @@ public class MessageProcessorTest {
 
         verify(broadcaster, times(2)).isEmpty();
         verify(broadcaster, never()).test(any(OutboundEvent.class));
-        verify(s3, never()).fetch(any(AmazonEventRecord.class));
+        verify(s3, never()).fetch(any(S3EventNotificationRecord.class));
         assertThat(actual).isFalse();
     }
 
     @Test
     public void testProcessS3ZeroSizeFailure() throws Exception {
         when(broadcaster.isEmpty()).thenReturn(false);
-        when(s3.fetch(any(AmazonEventRecord.class)))
+        when(s3.fetch(any(S3EventNotificationRecord.class)))
                 .thenThrow(new AmazonS3ZeroSizeException());
 
         message.setBody(
@@ -129,14 +129,14 @@ public class MessageProcessorTest {
 
         verify(broadcaster, times(2)).isEmpty();
         verify(broadcaster, never()).test(any(OutboundEvent.class));
-        verify(s3).fetch(any(AmazonEventRecord.class));
+        verify(s3).fetch(any(S3EventNotificationRecord.class));
         assertThat(actual).isTrue();
     }
 
     @Test
     public void testProcessS3ConstraintFailure() throws Exception {
         when(broadcaster.isEmpty()).thenReturn(false);
-        when(s3.fetch(any(AmazonEventRecord.class)))
+        when(s3.fetch(any(S3EventNotificationRecord.class)))
                 .thenThrow(new AmazonS3ConstraintException());
 
         message.setBody(
@@ -145,7 +145,7 @@ public class MessageProcessorTest {
 
         verify(broadcaster, times(2)).isEmpty();
         verify(broadcaster, never()).test(any(OutboundEvent.class));
-        verify(s3).fetch(any(AmazonEventRecord.class));
+        verify(s3).fetch(any(S3EventNotificationRecord.class));
         assertThat(actual).isTrue();
     }
 
@@ -164,7 +164,7 @@ public class MessageProcessorTest {
         object.setObjectContent(stream);
 
         when(broadcaster.isEmpty()).thenReturn(false);
-        when(s3.fetch(any(AmazonEventRecord.class))).thenReturn(object);
+        when(s3.fetch(any(S3EventNotificationRecord.class))).thenReturn(object);
 
         message.setBody(
                 FixtureHelpers.fixture("fixtures/sns_notification.json"));
@@ -172,7 +172,7 @@ public class MessageProcessorTest {
 
         verify(broadcaster, times(2)).isEmpty();
         verify(broadcaster, times(10)).test(any(OutboundEvent.class));
-        verify(s3).fetch(any(AmazonEventRecord.class));
+        verify(s3).fetch(any(S3EventNotificationRecord.class));
         verify(request, never()).abort();
         assertThat(actual).isTrue();
     }
@@ -192,14 +192,14 @@ public class MessageProcessorTest {
         object.setObjectContent(stream);
 
         when(broadcaster.isEmpty()).thenReturn(false);
-        when(s3.fetch(any(AmazonEventRecord.class))).thenReturn(object);
+        when(s3.fetch(any(S3EventNotificationRecord.class))).thenReturn(object);
 
         message.setBody(FixtureHelpers.fixture("fixtures/sqs_records.json"));
         final boolean actual = processor.test(message);
 
         verify(broadcaster, times(2)).isEmpty();
         verify(broadcaster, times(10)).test(any(OutboundEvent.class));
-        verify(s3).fetch(any(AmazonEventRecord.class));
+        verify(s3).fetch(any(S3EventNotificationRecord.class));
         verify(request, never()).abort();
         assertThat(actual).isTrue();
     }
@@ -220,7 +220,7 @@ public class MessageProcessorTest {
 
         when(broadcaster.test(any(OutboundEvent.class))).thenReturn(false,
                 false, false, false, true);
-        when(s3.fetch(any(AmazonEventRecord.class))).thenReturn(object);
+        when(s3.fetch(any(S3EventNotificationRecord.class))).thenReturn(object);
 
         message.setBody(
                 FixtureHelpers.fixture("fixtures/sns_notification.json"));
@@ -228,7 +228,7 @@ public class MessageProcessorTest {
 
         verify(broadcaster, times(2)).isEmpty();
         verify(broadcaster, times(5)).test(any(OutboundEvent.class));
-        verify(s3).fetch(any(AmazonEventRecord.class));
+        verify(s3).fetch(any(S3EventNotificationRecord.class));
         verify(request).abort();
         assertThat(actual).isFalse();
     }
