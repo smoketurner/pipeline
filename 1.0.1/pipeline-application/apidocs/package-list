@@ -1,0 +1,8 @@
+com.smoketurner.pipeline.application
+com.smoketurner.pipeline.application.aws
+com.smoketurner.pipeline.application.config
+com.smoketurner.pipeline.application.convert
+com.smoketurner.pipeline.application.core
+com.smoketurner.pipeline.application.exceptions
+com.smoketurner.pipeline.application.managed
+com.smoketurner.pipeline.application.resources
