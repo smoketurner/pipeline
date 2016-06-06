@@ -25,7 +25,6 @@ import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
-import com.amazonaws.regions.ServiceAbbreviations;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.sqs.AmazonSQSClient;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -111,8 +110,7 @@ public class AwsConfiguration {
         final Region region = Region.getRegion(this.region);
         Objects.requireNonNull(region);
 
-        Preconditions.checkArgument(
-                region.isServiceSupported(ServiceAbbreviations.S3),
+        Preconditions.checkArgument(region.isServiceSupported("s3"),
                 "S3 is not supported in " + region);
 
         final ClientConfiguration clientConfig = getClientConfiguration();
@@ -127,8 +125,7 @@ public class AwsConfiguration {
         final Region region = Region.getRegion(this.region);
         Objects.requireNonNull(region);
 
-        Preconditions.checkArgument(
-                region.isServiceSupported(ServiceAbbreviations.SQS),
+        Preconditions.checkArgument(region.isServiceSupported("sqs"),
                 "SQS is not supported in " + region);
 
         final ClientConfiguration clientConfig = getClientConfiguration();
