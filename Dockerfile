@@ -1,15 +1,30 @@
-FROM maven:3-jdk-8
+FROM java:openjdk-8-jre-alpine
 MAINTAINER Justin Plock <jplock@smoketurner.com>
 
-LABEL name="pipeline" version="1.0.1-SNAPSHOT"
+ARG VERSION="1.0.1-SNAPSHOT"
 
-RUN mkdir -p /src
-WORKDIR /src
-ADD . /src
-RUN mvn package -DskipTests=true && rm -rf $HOME/.m2
-WORKDIR pipeline-application
-VOLUME ["/src/pipline-application"]
+LABEL name="pipeline" version=$VERSION
 
-EXPOSE 8080 8180
-ENTRYPOINT ["java", "-d64", "-server", "-jar", "target/pipeline-application-1.0.1-SNAPSHOT.jar"]
-CMD ["server", "pipeline.yml"]
+ENV PORT 8080
+ENV M2_HOME /usr/lib/mvn
+ENV M2 $M2_HOME/bin
+ENV PATH $PATH:$M2_HOME:$M2
+
+WORKDIR /app
+COPY . .
+
+RUN apk add --no-cache curl openjdk8="$JAVA_ALPINE_VERSION" && \
+    curl http://mirrors.sonic.net/apache/maven/maven-3/3.3.9/binaries/apache-maven-3.3.9-bin.tar.gz | tar -zx && \
+    mv apache-maven-3.3.9 /usr/lib/mvn && \
+    # build the application into a single JAR, including dependencies
+    mvn package -Dmaven.javadoc.skip=true -Dmaven.test.skip=true -Dmaven.source.skip=true && \
+    rm pipeline-application/target/original-*.jar && \
+    mv pipeline-application/target/*.jar app.jar && \
+    # remove all build artifacts & dependencies, Maven, and the JDK
+    rm -rf /root/.m2 && \
+    rm -rf /usr/lib/mvn && \
+    rm -rf pipeline-client/target && \
+    rm -rf pipeline-application/target && \
+    apk del openjdk8
+
+CMD java $JAVA_OPTS -Ddw.server.connector.port=$PORT -jar app.jar server config.yml
