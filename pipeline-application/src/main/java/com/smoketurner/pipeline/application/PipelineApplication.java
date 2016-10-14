@@ -18,6 +18,8 @@ package com.smoketurner.pipeline.application;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import org.eclipse.jetty.server.Handler;
+import org.glassfish.jersey.media.sse.SseFeature;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.sqs.AmazonSQSClient;
 import com.smoketurner.pipeline.application.config.AwsConfiguration;
@@ -32,6 +34,7 @@ import com.smoketurner.pipeline.application.resources.EventResource;
 import com.smoketurner.pipeline.application.resources.PingResource;
 import com.smoketurner.pipeline.application.resources.VersionResource;
 import io.dropwizard.Application;
+import io.dropwizard.jetty.BiDiGzipHandler;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import io.federecio.dropwizard.swagger.SwaggerBundle;
@@ -92,6 +95,15 @@ public class PipelineApplication extends Application<PipelineConfiguration> {
                 .scheduledExecutorService("heartbeat-%d").threads(1).build();
         scheduler.scheduleAtFixedRate(new HeartbeatRunnable(broadcaster), 0, 1,
                 TimeUnit.SECONDS);
+
+        // Disable GZIP content encoding for SSE endpoints
+        environment.lifecycle().addServerLifecycleListener(server -> {
+            for (Handler handler : server
+                    .getChildHandlersByClass(BiDiGzipHandler.class)) {
+                ((BiDiGzipHandler) handler)
+                        .addExcludedMimeTypes(SseFeature.SERVER_SENT_EVENTS);
+            }
+        });
 
         // resources
         environment.jersey().register(new EventResource(broadcaster));

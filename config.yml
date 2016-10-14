@@ -18,9 +18,6 @@ swagger:
 # HTTP-specific options.
 server:
 
-  gzip:
-    enabled: false
-
   type: simple
   applicationContextPath: /
   connector:
