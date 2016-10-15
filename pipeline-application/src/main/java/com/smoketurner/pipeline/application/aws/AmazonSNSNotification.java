@@ -18,6 +18,9 @@ package com.smoketurner.pipeline.application.aws;
 import java.util.Objects;
 import javax.annotation.concurrent.Immutable;
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
+import org.joda.time.Duration;
+import org.joda.time.Interval;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -54,6 +57,13 @@ public final class AmazonSNSNotification {
     @JsonProperty("Timestamp")
     public DateTime getTimestamp() {
         return timestamp;
+    }
+
+    @JsonIgnore
+    public Duration getDelayDuration() {
+        final Interval interval = new Interval(timestamp,
+                DateTime.now(DateTimeZone.UTC));
+        return interval.toDuration();
     }
 
     @JsonIgnore

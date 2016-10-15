@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.Objects;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.amazonaws.AmazonClientException;
@@ -125,7 +126,7 @@ public class AmazonS3Downloader {
      *            S3 object to inspect
      * @return true if the file is gzipped, otherwise false
      */
-    public static boolean isGZipped(final S3Object object) {
+    public static boolean isGZipped(@Nullable final S3Object object) {
         if (object == null) {
             return false;
         }

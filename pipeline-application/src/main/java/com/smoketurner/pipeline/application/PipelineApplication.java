@@ -29,6 +29,7 @@ import com.smoketurner.pipeline.application.core.AmazonSQSIterator;
 import com.smoketurner.pipeline.application.core.InstrumentedSseBroadcaster;
 import com.smoketurner.pipeline.application.core.MessageProcessor;
 import com.smoketurner.pipeline.application.core.PipelineRunnable;
+import com.smoketurner.pipeline.application.managed.AmazonSQSIteratorManager;
 import com.smoketurner.pipeline.application.resources.EventResource;
 import com.smoketurner.pipeline.application.resources.PingResource;
 import com.smoketurner.pipeline.application.resources.VersionResource;
@@ -74,6 +75,8 @@ public class PipelineApplication extends Application<PipelineConfiguration> {
 
         final AmazonSQSIterator sqsIterator = new AmazonSQSIterator(sqs,
                 awsConfig.getQueueUrl());
+        environment.lifecycle()
+                .manage(new AmazonSQSIteratorManager(sqsIterator));
         final AmazonS3Downloader s3Downloader = new AmazonS3Downloader(s3);
 
         // SSE message broadcaster

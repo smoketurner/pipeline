@@ -22,12 +22,14 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import java.util.List;
+import org.junit.Before;
 import org.junit.Test;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.sqs.AmazonSQSClient;
 import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import com.amazonaws.services.sqs.model.ReceiveMessageResult;
+import com.codahale.metrics.SharedMetricRegistries;
 
 public class AmazonSQSIteratorTest {
 
@@ -35,6 +37,11 @@ public class AmazonSQSIteratorTest {
     private final AmazonSQSClient mockSQS = mock(AmazonSQSClient.class);
     private final AmazonSQSIterator iterator = new AmazonSQSIterator(mockSQS,
             QUEUE_URL);
+
+    @Before
+    public void setUp() {
+        SharedMetricRegistries.clear();
+    }
 
     @Test
     public void testHasNext() throws Exception {

@@ -25,8 +25,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.ws.rs.core.MediaType;
-import org.glassfish.jersey.media.sse.OutboundEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.amazonaws.AmazonClientException;
@@ -50,8 +48,6 @@ public class MessageProcessor implements Predicate<Message> {
     private static final Logger LOGGER = LoggerFactory
             .getLogger(MessageProcessor.class);
     private static final ObjectMapper MAPPER = Jackson.newObjectMapper();
-    private final OutboundEvent.Builder event = new OutboundEvent.Builder()
-            .name("event").mediaType(MediaType.APPLICATION_JSON_TYPE);
     private final AmazonS3Downloader s3;
     private final InstrumentedSseBroadcaster broadcaster;
 
@@ -119,12 +115,8 @@ public class MessageProcessor implements Predicate<Message> {
             return true;
         }
 
-        if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace("Parsed SNS notification: {}", notification);
-        } else if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("SNS notification created at: {}",
-                    notification.getTimestamp());
-        }
+        LOGGER.debug("SNS notification created at: {} ({} behind)",
+                notification.getTimestamp(), notification.getDelayDuration());
 
         // if we don't have a valid SNS notification, try parsing the body as S3
         // event records
@@ -165,78 +157,9 @@ public class MessageProcessor implements Predicate<Message> {
                 return false;
             }
 
-            LOGGER.trace("Event Record: {}", record);
-
-            final S3Object download;
-            try {
-                download = s3.fetch(record);
-            } catch (AmazonS3ConstraintException
-                    | AmazonS3ZeroSizeException e) {
-                LOGGER.error(
-                        "Unable to download file from S3, skipping to next record",
-                        e);
+            if (processRecord(record)) {
                 recordsProcessed++;
-                continue;
-            } catch (AmazonS3Exception e) {
-                if (e.getStatusCode() == 404) {
-                    LOGGER.warn(
-                            "File does not exist in S3, skipping to next record",
-                            e);
-                    recordsProcessed++;
-                    continue;
-                }
-                LOGGER.error("Amazon S3 exception, skipping remaining records",
-                        e);
-                return false;
-            } catch (Exception e) {
-                LOGGER.error(
-                        "Failed to download file from S3, skipping remaining records",
-                        e);
-                return false;
             }
-
-            final AtomicInteger eventCount = new AtomicInteger(0);
-            try (S3ObjectInputStream input = download.getObjectContent()) {
-
-                final BufferedReader reader;
-                if (AmazonS3Downloader.isGZipped(download)) {
-                    reader = new BufferedReader(new InputStreamReader(
-                            new StreamingGZIPInputStream(input),
-                            StandardCharsets.UTF_8));
-                } else {
-                    reader = new BufferedReader(new InputStreamReader(input,
-                            StandardCharsets.UTF_8));
-                }
-
-                // failed will be true if we did not successfully broadcast all
-                // of the events because of no consumers
-                final boolean failed = reader.lines()
-                        .map(line -> event.data(line).build())
-                        .peek(event -> eventCount.incrementAndGet())
-                        .anyMatch(broadcaster::test);
-
-                if (failed) {
-                    // abort the current S3 download
-                    input.abort();
-                    LOGGER.error(
-                            "Partial events broadcast ({} sent) from key: {}/{}",
-                            eventCount.get(), download.getBucketName(),
-                            download.getKey());
-                    return false;
-                }
-
-            } catch (IOException e) {
-                LOGGER.error("Error streaming key: " + download.getBucketName()
-                        + "/" + download.getKey(), e);
-                return false;
-            }
-
-            eventCounts.update(eventCount.get());
-
-            LOGGER.debug("Broadcast {} events from key: {}/{}", eventCount,
-                    download.getBucketName(), download.getKey());
-
-            recordsProcessed++;
         }
 
         // if we've processed all of the records, which includes skipping over
@@ -247,8 +170,105 @@ public class MessageProcessor implements Predicate<Message> {
             return true;
         }
 
-        LOGGER.debug("Processed {} of {} records, not deleting SQS message",
-                recordsProcessed, recordCount);
+        LOGGER.debug("Processed {} of {} records, not deleting SQS message: {}",
+                recordsProcessed, recordCount, message.getMessageId());
         return false;
+    }
+
+    /**
+     * Process an S3 event notification record by streaming object in
+     * {@link streamObject}
+     * 
+     * @param record
+     *            S3 event notification record
+     * @return true if the record was fully processed, otherwise false
+     */
+    private boolean processRecord(
+            @Nonnull final S3EventNotificationRecord record) {
+        LOGGER.trace("Event Record: {}", record);
+
+        final S3Object download;
+        try {
+            download = s3.fetch(record);
+        } catch (AmazonS3ConstraintException | AmazonS3ZeroSizeException e) {
+            LOGGER.error(
+                    "Unable to download file from S3, skipping to next record",
+                    e);
+            return true;
+        } catch (AmazonS3Exception e) {
+            if (e.getStatusCode() == 404) {
+                LOGGER.warn(
+                        "File does not exist in S3, skipping to next record",
+                        e);
+                return true;
+            }
+            LOGGER.error("Amazon S3 exception, skipping remaining records", e);
+            return false;
+        } catch (Exception e) {
+            LOGGER.error(
+                    "Failed to download file from S3, skipping remaining records",
+                    e);
+            return false;
+        }
+
+        final int eventCount;
+        try {
+            eventCount = streamObject(download);
+        } catch (IOException e) {
+            LOGGER.error(String.format("Error streaming key: %s/%s",
+                    download.getBucketName(), download.getKey()), e);
+            return false;
+        }
+
+        eventCounts.update(eventCount);
+
+        LOGGER.debug("Broadcast {} events from key: {}/{}", eventCount,
+                download.getBucketName(), download.getKey());
+        return true;
+    }
+
+    /**
+     * Stream an {@link S3Object} object and process each line with the
+     * processor.
+     * 
+     * @param object
+     *            S3Object to download and process
+     * @return number of events processed
+     * @throws IOException
+     *             if unable to stream the object
+     */
+    private int streamObject(@Nonnull final S3Object object)
+            throws IOException {
+
+        final AtomicInteger eventCount = new AtomicInteger(0);
+        try (S3ObjectInputStream input = object.getObjectContent()) {
+
+            final BufferedReader reader;
+            if (AmazonS3Downloader.isGZipped(object)) {
+                reader = new BufferedReader(new InputStreamReader(
+                        new StreamingGZIPInputStream(input),
+                        StandardCharsets.UTF_8));
+            } else {
+                reader = new BufferedReader(
+                        new InputStreamReader(input, StandardCharsets.UTF_8));
+            }
+
+            // failed will be true if we did not successfully broadcast all
+            // of the events because of no consumers
+            final boolean failed = reader.lines()
+                    .peek(event -> eventCount.incrementAndGet())
+                    .anyMatch(broadcaster::test);
+
+            if (failed) {
+                // abort the current S3 download
+                input.abort();
+                LOGGER.error(
+                        "Partial events broadcast ({} sent) from key: {}/{}",
+                        eventCount.get(), object.getBucketName(),
+                        object.getKey());
+                throw new IOException("aborting download");
+            }
+        }
+        return eventCount.get();
     }
 }

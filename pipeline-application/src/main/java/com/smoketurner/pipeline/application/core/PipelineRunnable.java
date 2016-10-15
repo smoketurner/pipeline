@@ -84,7 +84,7 @@ public class PipelineRunnable implements Runnable {
                 }
 
             } else {
-                LOGGER.info(
+                LOGGER.trace(
                         "No active connections found, sleeping for {} seconds",
                         sleepSeconds);
             }

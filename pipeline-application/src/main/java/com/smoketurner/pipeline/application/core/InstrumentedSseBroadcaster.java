@@ -18,6 +18,7 @@ package com.smoketurner.pipeline.application.core;
 import static com.codahale.metrics.MetricRegistry.name;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
+import javax.ws.rs.core.MediaType;
 import org.glassfish.jersey.media.sse.OutboundEvent;
 import org.glassfish.jersey.media.sse.SseBroadcaster;
 import org.glassfish.jersey.server.ChunkedOutput;
@@ -28,12 +29,14 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.SharedMetricRegistries;
 
 public class InstrumentedSseBroadcaster extends SseBroadcaster
-        implements Predicate<OutboundEvent> {
+        implements Predicate<String> {
 
     private static final Logger LOGGER = LoggerFactory
             .getLogger(InstrumentedSseBroadcaster.class);
     private static final OutboundEvent PING_EVENT = new OutboundEvent.Builder()
             .name("ping").data("ping").build();
+    private static final OutboundEvent.Builder EVENT_BUILDER = new OutboundEvent.Builder()
+            .name("event").mediaType(MediaType.APPLICATION_JSON_TYPE);
     private final AtomicInteger connectionCounter = new AtomicInteger(0);
     private final Meter pingRate;
     private final Meter eventRate;
@@ -79,7 +82,7 @@ public class InstrumentedSseBroadcaster extends SseBroadcaster
     }
 
     @Override
-    public void broadcast(OutboundEvent chunk) {
+    public void broadcast(final OutboundEvent chunk) {
         super.broadcast(chunk);
         eventRate.mark();
         LOGGER.trace("sent event");
@@ -88,19 +91,19 @@ public class InstrumentedSseBroadcaster extends SseBroadcaster
     /**
      * Broadcasts an event to all connected consumers.
      * 
-     * @param chunk
+     * @param event
      *            Event to broadcast
      * @return true if there were no connected consumers before or after
      *         broadcasting, otherwise false
      */
     @Override
-    public boolean test(OutboundEvent chunk) {
+    public boolean test(final String event) {
         if (isEmpty()) {
             LOGGER.trace("No consumers, returning true");
             return true;
         }
 
-        broadcast(chunk);
+        broadcast(EVENT_BUILDER.data(event).build());
 
         if (isEmpty()) {
             LOGGER.trace("No consumers, returning true");

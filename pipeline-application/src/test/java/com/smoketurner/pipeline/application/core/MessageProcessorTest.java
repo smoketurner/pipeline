@@ -17,6 +17,7 @@ package com.smoketurner.pipeline.application.core;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
@@ -71,7 +72,7 @@ public class MessageProcessorTest {
         final boolean actual = processor.test(message);
 
         verify(broadcaster).isEmpty();
-        verify(broadcaster, never()).test(any(OutboundEvent.class));
+        verify(broadcaster, never()).test(anyString());
         verify(s3, never()).fetch(any(S3EventNotificationRecord.class));
         assertThat(actual).isFalse();
     }
@@ -82,7 +83,7 @@ public class MessageProcessorTest {
         final boolean actual = processor.test(message);
 
         verify(broadcaster).isEmpty();
-        verify(broadcaster, never()).test(any(OutboundEvent.class));
+        verify(broadcaster, never()).test(anyString());
         verify(s3, never()).fetch(any(S3EventNotificationRecord.class));
         assertThat(actual).isTrue();
     }
@@ -98,7 +99,7 @@ public class MessageProcessorTest {
         final boolean actual = processor.test(message);
 
         verify(broadcaster, times(2)).isEmpty();
-        verify(broadcaster, never()).test(any(OutboundEvent.class));
+        verify(broadcaster, never()).test(anyString());
         verify(s3).fetch(any(S3EventNotificationRecord.class));
         assertThat(actual).isFalse();
     }
@@ -112,7 +113,7 @@ public class MessageProcessorTest {
         final boolean actual = processor.test(message);
 
         verify(broadcaster, times(2)).isEmpty();
-        verify(broadcaster, never()).test(any(OutboundEvent.class));
+        verify(broadcaster, never()).test(anyString());
         verify(s3, never()).fetch(any(S3EventNotificationRecord.class));
         assertThat(actual).isFalse();
     }
@@ -128,7 +129,7 @@ public class MessageProcessorTest {
         final boolean actual = processor.test(message);
 
         verify(broadcaster, times(2)).isEmpty();
-        verify(broadcaster, never()).test(any(OutboundEvent.class));
+        verify(broadcaster, never()).test(anyString());
         verify(s3).fetch(any(S3EventNotificationRecord.class));
         assertThat(actual).isTrue();
     }
@@ -144,7 +145,7 @@ public class MessageProcessorTest {
         final boolean actual = processor.test(message);
 
         verify(broadcaster, times(2)).isEmpty();
-        verify(broadcaster, never()).test(any(OutboundEvent.class));
+        verify(broadcaster, never()).test(anyString());
         verify(s3).fetch(any(S3EventNotificationRecord.class));
         assertThat(actual).isTrue();
     }
@@ -171,7 +172,7 @@ public class MessageProcessorTest {
         final boolean actual = processor.test(message);
 
         verify(broadcaster, times(2)).isEmpty();
-        verify(broadcaster, times(10)).test(any(OutboundEvent.class));
+        verify(broadcaster, times(10)).test(anyString());
         verify(s3).fetch(any(S3EventNotificationRecord.class));
         verify(request, never()).abort();
         assertThat(actual).isTrue();
@@ -198,7 +199,7 @@ public class MessageProcessorTest {
         final boolean actual = processor.test(message);
 
         verify(broadcaster, times(2)).isEmpty();
-        verify(broadcaster, times(10)).test(any(OutboundEvent.class));
+        verify(broadcaster, times(10)).test(anyString());
         verify(s3).fetch(any(S3EventNotificationRecord.class));
         verify(request, never()).abort();
         assertThat(actual).isTrue();
@@ -218,8 +219,8 @@ public class MessageProcessorTest {
         object.setObjectMetadata(metadata);
         object.setObjectContent(stream);
 
-        when(broadcaster.test(any(OutboundEvent.class))).thenReturn(false,
-                false, false, false, true);
+        when(broadcaster.test(anyString())).thenReturn(false, false, false,
+                false, true);
         when(s3.fetch(any(S3EventNotificationRecord.class))).thenReturn(object);
 
         message.setBody(
@@ -227,7 +228,7 @@ public class MessageProcessorTest {
         final boolean actual = processor.test(message);
 
         verify(broadcaster, times(2)).isEmpty();
-        verify(broadcaster, times(5)).test(any(OutboundEvent.class));
+        verify(broadcaster, times(5)).test(anyString());
         verify(s3).fetch(any(S3EventNotificationRecord.class));
         verify(request).abort();
         assertThat(actual).isFalse();
