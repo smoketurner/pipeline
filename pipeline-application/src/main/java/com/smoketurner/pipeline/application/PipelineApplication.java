@@ -26,7 +26,6 @@ import com.smoketurner.pipeline.application.config.AwsConfiguration;
 import com.smoketurner.pipeline.application.config.PipelineConfiguration;
 import com.smoketurner.pipeline.application.core.AmazonS3Downloader;
 import com.smoketurner.pipeline.application.core.AmazonSQSIterator;
-import com.smoketurner.pipeline.application.core.HeartbeatRunnable;
 import com.smoketurner.pipeline.application.core.InstrumentedSseBroadcaster;
 import com.smoketurner.pipeline.application.core.MessageProcessor;
 import com.smoketurner.pipeline.application.core.PipelineRunnable;
@@ -93,7 +92,7 @@ public class PipelineApplication extends Application<PipelineConfiguration> {
         // send heartbeat pings every second to all connected clients
         final ScheduledExecutorService scheduler = environment.lifecycle()
                 .scheduledExecutorService("heartbeat-%d").threads(1).build();
-        scheduler.scheduleAtFixedRate(new HeartbeatRunnable(broadcaster), 0, 1,
+        scheduler.scheduleAtFixedRate(() -> broadcaster.ping(), 0, 1,
                 TimeUnit.SECONDS);
 
         // Disable GZIP content encoding for SSE endpoints
