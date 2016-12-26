@@ -22,15 +22,21 @@ import org.hibernate.validator.constraints.NotEmpty;
 import org.hibernate.validator.valuehandling.UnwrapValidatedValue;
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.auth.AWSCredentialsProvider;
+import com.amazonaws.auth.AWSStaticCredentialsProvider;
+import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
+import com.amazonaws.auth.STSAssumeRoleSessionCredentialsProvider;
 import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
+import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQSClient;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
+import com.google.common.base.Strings;
 import com.google.common.net.HostAndPort;
 import com.smoketurner.pipeline.application.managed.AmazonS3ClientManager;
 import com.smoketurner.pipeline.application.managed.AmazonSQSClientManager;
@@ -49,8 +55,11 @@ public class AwsConfiguration {
     @NotNull
     private Regions region = Regions.DEFAULT_REGION;
 
-    @NotNull
-    private AWSCredentialsProvider provider = new DefaultAWSCredentialsProviderChain();
+    private String accessKey;
+
+    private String secretKey;
+
+    private String stsRoleArn;
 
     @JsonProperty
     public String getQueueUrl() {
@@ -82,14 +91,34 @@ public class AwsConfiguration {
         this.region = region;
     }
 
-    @JsonProperty("provider")
-    public AWSCredentialsProvider getAWSCredentialsProvider() {
-        return provider;
+    @JsonProperty
+    public String getAccessKey() {
+        return accessKey;
     }
 
-    @JsonProperty("provider")
-    public void setAWSCredentialsProvider(AWSCredentialsProvider provider) {
-        this.provider = provider;
+    @JsonProperty
+    public void setAcccessKey(String key) {
+        this.accessKey = key;
+    }
+
+    @JsonProperty
+    public String getSecretKey() {
+        return secretKey;
+    }
+
+    @JsonProperty
+    public void setSecretKey(String key) {
+        this.secretKey = key;
+    }
+
+    @JsonProperty
+    public String getStsRoleArn() {
+        return stsRoleArn;
+    }
+
+    @JsonProperty
+    public void setStsRoleArn(String arn) {
+        this.stsRoleArn = arn;
     }
 
     @JsonIgnore
@@ -106,6 +135,31 @@ public class AwsConfiguration {
     }
 
     @JsonIgnore
+    public AWSCredentialsProvider getProvider() {
+        final AWSCredentialsProvider provider;
+        if (!Strings.isNullOrEmpty(accessKey)
+                && !Strings.isNullOrEmpty(secretKey)) {
+            provider = new AWSStaticCredentialsProvider(
+                    new BasicAWSCredentials(accessKey, secretKey));
+        } else {
+            provider = new DefaultAWSCredentialsProviderChain();
+        }
+
+        if (Strings.isNullOrEmpty(stsRoleArn)) {
+            return provider;
+        }
+
+        final ClientConfiguration clientConfig = getClientConfiguration();
+        final AWSSecurityTokenService stsClient = AWSSecurityTokenServiceClientBuilder
+                .standard().withCredentials(provider)
+                .withClientConfiguration(clientConfig).withRegion(region)
+                .build();
+
+        return new STSAssumeRoleSessionCredentialsProvider.Builder(stsRoleArn,
+                "pipeline").withStsClient(stsClient).build();
+    }
+
+    @JsonIgnore
     public AmazonS3Client buildS3(final Environment environment) {
         final Region region = Region.getRegion(this.region);
         Objects.requireNonNull(region);
@@ -113,6 +167,7 @@ public class AwsConfiguration {
         Preconditions.checkArgument(region.isServiceSupported("s3"),
                 "S3 is not supported in " + region);
 
+        final AWSCredentialsProvider provider = getProvider();
         final ClientConfiguration clientConfig = getClientConfiguration();
         final AmazonS3Client s3 = region.createClient(AmazonS3Client.class,
                 provider, clientConfig);
@@ -128,6 +183,7 @@ public class AwsConfiguration {
         Preconditions.checkArgument(region.isServiceSupported("sqs"),
                 "SQS is not supported in " + region);
 
+        final AWSCredentialsProvider provider = getProvider();
         final ClientConfiguration clientConfig = getClientConfiguration();
         final AmazonSQSClient sqs = region.createClient(AmazonSQSClient.class,
                 provider, clientConfig);
