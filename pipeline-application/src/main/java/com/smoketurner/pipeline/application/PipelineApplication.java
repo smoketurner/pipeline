@@ -34,6 +34,8 @@ import com.smoketurner.pipeline.application.resources.EventResource;
 import com.smoketurner.pipeline.application.resources.PingResource;
 import com.smoketurner.pipeline.application.resources.VersionResource;
 import io.dropwizard.Application;
+import io.dropwizard.configuration.EnvironmentVariableSubstitutor;
+import io.dropwizard.configuration.SubstitutingSourceProvider;
 import io.dropwizard.jetty.BiDiGzipHandler;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
@@ -55,6 +57,11 @@ public class PipelineApplication extends Application<PipelineConfiguration> {
 
     @Override
     public void initialize(Bootstrap<PipelineConfiguration> bootstrap) {
+        // Enable variable substitution with environment variables
+        bootstrap.setConfigurationSourceProvider(new SubstitutingSourceProvider(
+                bootstrap.getConfigurationSourceProvider(),
+                new EnvironmentVariableSubstitutor(false)));
+
         bootstrap.addBundle(new SwaggerBundle<PipelineConfiguration>() {
             @Override
             protected SwaggerBundleConfiguration getSwaggerBundleConfiguration(
