@@ -17,6 +17,7 @@ package com.smoketurner.pipeline.application.managed;
 
 import java.util.Objects;
 import javax.annotation.Nonnull;
+import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClient;
 import io.dropwizard.lifecycle.Managed;
 
@@ -27,11 +28,11 @@ public class AmazonSQSClientManager implements Managed {
     /**
      * Constructor
      *
-     * @param client
-     *            AmazonS3Client to manage
+     * @param sqs
+     *            AmazonSQS to manage
      */
-    public AmazonSQSClientManager(@Nonnull final AmazonSQSClient client) {
-        this.client = Objects.requireNonNull(client);
+    public AmazonSQSClientManager(@Nonnull final AmazonSQS sqs) {
+        this.client = (AmazonSQSClient) Objects.requireNonNull(sqs);
     }
 
     @Override

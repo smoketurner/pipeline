@@ -25,7 +25,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import com.amazonaws.services.sqs.AmazonSQSClient;
+import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.model.GetQueueAttributesRequest;
 import com.amazonaws.services.sqs.model.GetQueueAttributesResult;
 import com.amazonaws.services.sqs.model.Message;
@@ -45,7 +45,7 @@ public class AmazonSQSIterator implements Iterator<List<Message>>, Closeable {
     private static final int MAX_NUMBER_OF_MESSAGES = 10;
     private static final int VISIBILITY_TIMEOUT_SECS = 10;
     private static final int WAIT_TIME_SECS = 20;
-    private final AmazonSQSClient client;
+    private final AmazonSQS sqs;
     private final String queueUrl;
 
     // metrics
@@ -64,10 +64,10 @@ public class AmazonSQSIterator implements Iterator<List<Message>>, Closeable {
      * @param queueUrl
      *            Queue URL
      */
-    public AmazonSQSIterator(@Nonnull final AmazonSQSClient client,
+    public AmazonSQSIterator(@Nonnull final AmazonSQS sqs,
             @Nonnull final String queueUrl) {
 
-        this.client = Objects.requireNonNull(client);
+        this.sqs = Objects.requireNonNull(sqs);
         this.queueUrl = Objects.requireNonNull(queueUrl);
 
         final MetricRegistry registry = SharedMetricRegistries
@@ -108,7 +108,7 @@ public class AmazonSQSIterator implements Iterator<List<Message>>, Closeable {
                 MAX_NUMBER_OF_MESSAGES, WAIT_TIME_SECS,
                 VISIBILITY_TIMEOUT_SECS);
         receiveRequests.inc();
-        final ReceiveMessageResult result = client.receiveMessage(request);
+        final ReceiveMessageResult result = sqs.receiveMessage(request);
         final int numMessages = result.getMessages().size();
         LOGGER.debug("Received {} messages from SQS", numMessages);
         messageCounts.update(numMessages);
@@ -131,7 +131,7 @@ public class AmazonSQSIterator implements Iterator<List<Message>>, Closeable {
             LOGGER.debug("Deleting message from SQS: {}",
                     message.getMessageId());
             deleteRequests.inc();
-            client.deleteMessage(queueUrl, message.getReceiptHandle());
+            sqs.deleteMessage(queueUrl, message.getReceiptHandle());
             return true;
         } catch (Exception e) {
             LOGGER.error("Failed to delete message: " + message.getMessageId(),
@@ -151,7 +151,7 @@ public class AmazonSQSIterator implements Iterator<List<Message>>, Closeable {
      */
     private int getNumMessages() {
         try {
-            final GetQueueAttributesResult result = client
+            final GetQueueAttributesResult result = sqs
                     .getQueueAttributes(new GetQueueAttributesRequest(queueUrl)
                             .withAttributeNames(NUM_MESSAGES_KEY));
             final int count = Integer.parseInt(

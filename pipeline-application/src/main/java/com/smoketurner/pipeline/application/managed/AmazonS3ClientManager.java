@@ -17,6 +17,7 @@ package com.smoketurner.pipeline.application.managed;
 
 import java.util.Objects;
 import javax.annotation.Nonnull;
+import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
 import io.dropwizard.lifecycle.Managed;
 
@@ -27,11 +28,11 @@ public class AmazonS3ClientManager implements Managed {
     /**
      * Constructor
      *
-     * @param client
-     *            AmazonS3Client to manage
+     * @param s3
+     *            AmazonS3 to manage
      */
-    public AmazonS3ClientManager(@Nonnull final AmazonS3Client client) {
-        this.client = Objects.requireNonNull(client);
+    public AmazonS3ClientManager(@Nonnull final AmazonS3 s3) {
+        this.client = (AmazonS3Client) Objects.requireNonNull(s3);
     }
 
     @Override

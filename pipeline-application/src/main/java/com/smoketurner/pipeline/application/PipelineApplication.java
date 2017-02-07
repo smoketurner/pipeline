@@ -20,8 +20,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import org.eclipse.jetty.server.Handler;
 import org.glassfish.jersey.media.sse.SseFeature;
-import com.amazonaws.services.s3.AmazonS3Client;
-import com.amazonaws.services.sqs.AmazonSQSClient;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.sqs.AmazonSQS;
 import com.smoketurner.pipeline.application.config.AwsConfiguration;
 import com.smoketurner.pipeline.application.config.PipelineConfiguration;
 import com.smoketurner.pipeline.application.core.AmazonS3Downloader;
@@ -77,8 +77,8 @@ public class PipelineApplication extends Application<PipelineConfiguration> {
 
         // AWS clients
         final AwsConfiguration awsConfig = configuration.getAws();
-        final AmazonS3Client s3 = awsConfig.buildS3(environment);
-        final AmazonSQSClient sqs = awsConfig.buildSQS(environment);
+        final AmazonS3 s3 = awsConfig.buildS3(environment);
+        final AmazonSQS sqs = awsConfig.buildSQS(environment);
 
         final AmazonSQSIterator sqsIterator = new AmazonSQSIterator(sqs,
                 awsConfig.getQueueUrl());

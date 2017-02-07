@@ -15,7 +15,7 @@
  */
 package com.smoketurner.pipeline.application.config;
 
-import java.util.Objects;
+import java.util.Optional;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import org.hibernate.validator.constraints.NotEmpty;
@@ -28,13 +28,14 @@ import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.auth.STSAssumeRoleSessionCredentialsProvider;
 import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
-import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
-import com.amazonaws.services.sqs.AmazonSQSClient;
+import com.amazonaws.services.sqs.AmazonSQS;
+import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.net.HostAndPort;
@@ -50,10 +51,9 @@ public class AwsConfiguration {
     @NotNull
     @Valid
     @UnwrapValidatedValue(false)
-    private Optional<HostAndPort> proxy = Optional.absent();
+    private Optional<HostAndPort> proxy = Optional.empty();
 
-    @NotNull
-    private Regions region = Regions.DEFAULT_REGION;
+    private String region;
 
     private String accessKey;
 
@@ -82,12 +82,12 @@ public class AwsConfiguration {
     }
 
     @JsonProperty
-    public Regions getRegion() {
+    public String getRegion() {
         return region;
     }
 
     @JsonProperty
-    public void setRegion(Regions region) {
+    public void setRegion(String region) {
         this.region = region;
     }
 
@@ -160,33 +160,46 @@ public class AwsConfiguration {
     }
 
     @JsonIgnore
-    public AmazonS3Client buildS3(final Environment environment) {
-        final Region region = Region.getRegion(this.region);
-        Objects.requireNonNull(region);
-
-        Preconditions.checkArgument(region.isServiceSupported("s3"),
-                "S3 is not supported in " + region);
-
+    public AmazonS3 buildS3(final Environment environment) {
         final AWSCredentialsProvider provider = getProvider();
         final ClientConfiguration clientConfig = getClientConfiguration();
-        final AmazonS3Client s3 = region.createClient(AmazonS3Client.class,
-                provider, clientConfig);
+
+        final AmazonS3ClientBuilder builder = AmazonS3ClientBuilder.standard()
+                .withCredentials(provider)
+                .withClientConfiguration(clientConfig);
+
+        if (!Strings.isNullOrEmpty(this.region)) {
+            final Region region = Region
+                    .getRegion(Regions.fromName(this.region));
+            Preconditions.checkArgument(region.isServiceSupported("s3"),
+                    "S3 is not supported in " + region);
+
+            builder.withRegion(this.region);
+        }
+
+        final AmazonS3 s3 = builder.build();
         environment.lifecycle().manage(new AmazonS3ClientManager(s3));
         return s3;
     }
 
     @JsonIgnore
-    public AmazonSQSClient buildSQS(final Environment environment) {
-        final Region region = Region.getRegion(this.region);
-        Objects.requireNonNull(region);
-
-        Preconditions.checkArgument(region.isServiceSupported("sqs"),
-                "SQS is not supported in " + region);
-
+    public AmazonSQS buildSQS(final Environment environment) {
         final AWSCredentialsProvider provider = getProvider();
         final ClientConfiguration clientConfig = getClientConfiguration();
-        final AmazonSQSClient sqs = region.createClient(AmazonSQSClient.class,
-                provider, clientConfig);
+        final AmazonSQSClientBuilder builder = AmazonSQSClientBuilder.standard()
+                .withCredentials(provider)
+                .withClientConfiguration(clientConfig);
+
+        if (!Strings.isNullOrEmpty(this.region)) {
+            final Region region = Region
+                    .getRegion(Regions.fromName(this.region));
+            Preconditions.checkArgument(region.isServiceSupported("sqs"),
+                    "SQS is not supported in " + region);
+
+            builder.withRegion(this.region);
+        }
+
+        final AmazonSQS sqs = builder.build();
         environment.lifecycle().manage(new AmazonSQSClientManager(sqs));
         return sqs;
     }

@@ -24,7 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
-import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.event.S3EventNotification.S3EventNotificationRecord;
 import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.S3Object;
@@ -40,7 +40,7 @@ public class AmazonS3Downloader {
     private static final String GZIP_ENCODING = "gzip";
     private static final String GZIP_EXTENSION = ".gz";
     private final AmazonS3ObjectConverter converter = new AmazonS3ObjectConverter();
-    private final AmazonS3Client s3;
+    private final AmazonS3 s3;
 
     /**
      * Constructor
@@ -48,7 +48,7 @@ public class AmazonS3Downloader {
      * @param s3
      *            Amazon S3 client
      */
-    public AmazonS3Downloader(@Nonnull final AmazonS3Client s3) {
+    public AmazonS3Downloader(@Nonnull final AmazonS3 s3) {
         this.s3 = Objects.requireNonNull(s3);
     }
 
