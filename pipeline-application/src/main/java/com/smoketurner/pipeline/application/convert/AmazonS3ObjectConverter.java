@@ -42,7 +42,7 @@ public class AmazonS3ObjectConverter
                 null, null);
         final S3ObjectEntity object = new S3ObjectEntity(b.getKey(),
                 b.getSize(), b.getETag().orElse(null),
-                b.getVersionId().orElse(null));
+                b.getVersionId().orElse(null), null);
         final S3Entity s3 = new S3Entity(null, bucket, object, null);
         return new S3EventNotificationRecord(null, null, null, null, null, null,
                 null, s3, null);
