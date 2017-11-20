@@ -57,11 +57,6 @@ public class AmazonS3DownloaderTest {
                 "1970-01-01T00:00:00.000Z", "2.0", null, null, s3, null);
     }
 
-    @Test(expected = NullPointerException.class)
-    public void testFetchNull() throws Exception {
-        downloader.fetch(null);
-    }
-
     @Test
     public void testFetch() throws Exception {
         final S3Object expected = new S3Object();
