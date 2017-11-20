@@ -47,7 +47,7 @@ import io.dropwizard.setup.Environment;
 public class AwsConfiguration {
 
     @NotEmpty
-    private String queueUrl;
+    private String queueUrl = "";
 
     @NotNull
     @Valid
