@@ -17,6 +17,7 @@ package com.smoketurner.pipeline.application.core;
 
 import java.util.Objects;
 import java.util.Optional;
+import javax.annotation.Nullable;
 import javax.annotation.concurrent.Immutable;
 import com.google.common.base.MoreObjects;
 
@@ -27,8 +28,8 @@ public final class AmazonS3Object {
     private final String bucketName;
     private final String key;
     private final long size;
-    private final String eTag;
-    private final String versionId;
+    private final Optional<String> eTag;
+    private final Optional<String> versionId;
 
     /**
      * Constructor
@@ -47,22 +48,14 @@ public final class AmazonS3Object {
      *            S3 object version ID
      */
     public AmazonS3Object(final String region, final String bucketName,
-            final String key, final long size, final Optional<String> eTag,
-            final Optional<String> versionId) {
+            final String key, final long size, @Nullable final String eTag,
+            @Nullable final String versionId) {
         this.region = Objects.requireNonNull(region);
         this.bucketName = Objects.requireNonNull(bucketName);
         this.key = Objects.requireNonNull(key);
         this.size = size;
-        if (eTag == null) {
-            this.eTag = null;
-        } else {
-            this.eTag = eTag.orElse(null);
-        }
-        if (versionId == null) {
-            this.versionId = null;
-        } else {
-            this.versionId = versionId.orElse(null);
-        }
+        this.eTag = Optional.ofNullable(eTag);
+        this.versionId = Optional.ofNullable(versionId);
     }
 
     public String getRegion() {
@@ -82,11 +75,11 @@ public final class AmazonS3Object {
     }
 
     public Optional<String> getETag() {
-        return Optional.ofNullable(eTag);
+        return eTag;
     }
 
     public Optional<String> getVersionId() {
-        return Optional.ofNullable(versionId);
+        return versionId;
     }
 
     @Override

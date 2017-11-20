@@ -17,7 +17,7 @@ package com.smoketurner.pipeline.application.core;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
@@ -51,19 +51,15 @@ public class AmazonS3DownloaderTest {
         final S3BucketEntity bucket = new S3BucketEntity("bucket-name", null,
                 null);
         final S3ObjectEntity object = new S3ObjectEntity("object-key", 100L,
-                "object eTag", "object version");
+                "object eTag", "object version", null);
         final S3Entity s3 = new S3Entity(null, bucket, object, null);
         record = new S3EventNotificationRecord("us-east-1", null, "aws:s3",
                 "1970-01-01T00:00:00.000Z", "2.0", null, null, s3, null);
     }
 
-    @Test
+    @Test(expected = NullPointerException.class)
     public void testFetchNull() throws Exception {
-        try {
-            downloader.fetch(null);
-            failBecauseExceptionWasNotThrown(NullPointerException.class);
-        } catch (NullPointerException e) {
-        }
+        downloader.fetch(null);
     }
 
     @Test
