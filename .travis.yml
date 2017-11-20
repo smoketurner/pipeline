@@ -1,9 +1,8 @@
 sudo: false
 dist: trusty
 language: java
-jdk:
-  - oraclejdk8
 before_install:
+  - ulimit -c unlimited -S
   - mvn -N io.takari:maven:wrapper
 after_success:
   - bash .travis_after_success.sh
@@ -11,12 +10,24 @@ cache:
   directories:
     - $HOME/.m2
 
-addons:
-  apt:
-    packages:
-      - oracle-java8-installer
+matrix:
+  include:
+    - os: linux
+      jdk: oraclejdk8
+      addons:
+        apt:
+          packages:
+            - oracle-java8-installer
+    - os: linux
+      jdk: oraclejdk9
+      addons:
+        apt:
+          packages:
+            - oracle-java9-installer
 
 env:
   global:
+    # CI_DEPLOY_USERNAME
     - secure: "zgGrAluAknUBe18LFkZPutXt17NrfQNFKc1MfnwpyROzirHZY+3I8XihozsdxsYljsFw2bVwnjN2eU+O2Xcz4J490PvbU4VEZvaslgzVLIP0TaQvOClEHcyW+HxD0U7vsmJINjitizMHcy7gMDzYf9l72aov5YF2Ocg/PNKBmGUIan5dmvu2b3VN80h4lDNrhXslnamF/ex464xecAmbN+h7wFvPf8BnYtDhOCUS7tr1phsAN8Dwdt0sY1JvIFw0WEVZK8/8/bQrseiHLfSIHTf+T6x1i2OhA9FXtjPcGRFBbguTEEhGCEsMR0Xl+5x/xiw9SNfgDkL0i8nQBG385CcKV6q/awSr0gQwgJgpCV97It6Gn3H0ytw/+Hq2AdHXkAqaj3xD6qT0zKQ42O5ABOVrkZEgNaN5nFBQfAlixVYa2xAiy8542bs+UVtie2aB0LoSVbRgsH5wXhKoWUHoXv7u8EzRrMwL0bEeyLG5ZeMd5I1HlBSSuZMNqx9PJVjvdMpOHJQXL+4Wb1MOPV7MD7GBOb8VwHducAm3zzoBtXSn8J5SSqVUdhHEH5Uo1qJFhs+QO4jjlUYqm0wedO7q6YBoCausFp0v/J5vYwlr+VWG0AApuz4ifqHDpCHxuvgBT1YPcOlQ8IMlsk4hQObma/XedXvWv0srSJy/uxREEFo="
+    # CI_DEPLOY_PASSWORD
     - secure: "BVWL2UuoRQFFz/VhDyKtXVN1sq/MQj+zKEncJwjT4V2O+dfMWzyBB7iyXv2dANPygpAZ4aDQSCmazGb/j2jq7KmDx9vZvdBTbtSe1cslVE3RygaTX0zE6vuyQeNdAW6TBhJMbg5hYYCKnQNAf0MY3QiM+95xb++9IQFSBB6c/UU4i3mplLrQgcBESWaTt8pWXSVqDl6QveTYiGqbCgQ23t1IhYjcnL/oIzti0GR+JomzYNkvguRQMAocxmLnDroHXTkm4yhIln6sYIxsKAx6Xv7L47q5KjiB4CgZL7ZtKQI7rvYV2eDeAZwdxIna0dHvCWe801IXaO7IIVWlD8QtLf+F90VhhSGYjxtyqlG1rgsJ+MpvuTbbAU1IMfd3Ys2Fdy19c5M9kLtJ8+l4PyvuOLgyEDCOMojuoGaLSuPbDPMIc6qUVLgfJ7+x56VaMln21FfN93nITkQtghZ0NQRwhAUEbth18iZnKqy8S/pIKph1YGPAefPfy/AQyU47faPuzlqSp1n1AOfQRXkaNUsDDFlrRSm28foatzQbvJuANMqgZ3YpSmAastXh2/bTjbNA0WsSTLeatLwku35KJ+HQ6DPPKAkX9KeQrKChlKk3oYG2bmCsBWd/yAkxYx7p+P3+9lT/F3djawePX3niV0kCfVmnu4PffgG/ff6yVc29vRM="
