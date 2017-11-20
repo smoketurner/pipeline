@@ -16,7 +16,6 @@
 package com.smoketurner.pipeline.application.core;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -27,7 +26,7 @@ public class AmazonS3ObjectTest {
     @Before
     public void setUp() {
         object = new AmazonS3Object("us-east-1", "bucket-name", "object-key",
-                100, Optional.of("object eTag"), Optional.of("object version"));
+                100, "object eTag", "object version");
     }
 
     @Test
@@ -44,8 +43,8 @@ public class AmazonS3ObjectTest {
     @Test
     public void testEquals() {
         final AmazonS3Object object2 = new AmazonS3Object("us-east-1",
-                "bucket-name", "object-key", 100, Optional.of("object eTag"),
-                Optional.of("object version"));
+                "bucket-name", "object-key", 100, "object eTag",
+                "object version");
         assertThat(object).isEqualTo(object2);
     }
 
@@ -57,7 +56,7 @@ public class AmazonS3ObjectTest {
     @Test
     public void testToString() {
         final String expected = "AmazonS3Object{region=us-east-1, bucketName=bucket-name, key=object-key,"
-                + " size=100, eTag=object eTag, versionId=object version}";
+                + " size=100, eTag=Optional[object eTag], versionId=Optional[object version]}";
         assertThat(object.toString()).isEqualTo(expected);
     }
 }

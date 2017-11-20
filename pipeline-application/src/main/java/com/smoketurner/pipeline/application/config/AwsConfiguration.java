@@ -16,6 +16,7 @@
 package com.smoketurner.pipeline.application.config;
 
 import java.util.Optional;
+import javax.annotation.Nullable;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import org.hibernate.validator.constraints.NotEmpty;
@@ -46,19 +47,23 @@ import io.dropwizard.setup.Environment;
 public class AwsConfiguration {
 
     @NotEmpty
-    private String queueUrl;
+    private String queueUrl = "";
 
     @NotNull
     @Valid
     @UnwrapValidatedValue(false)
     private Optional<HostAndPort> proxy = Optional.empty();
 
+    @Nullable
     private String region;
 
+    @Nullable
     private String accessKey;
 
+    @Nullable
     private String secretKey;
 
+    @Nullable
     private String stsRoleArn;
 
     @JsonProperty
@@ -81,43 +86,47 @@ public class AwsConfiguration {
         this.proxy = proxy;
     }
 
+    @Nullable
     @JsonProperty
     public String getRegion() {
         return region;
     }
 
     @JsonProperty
-    public void setRegion(String region) {
+    public void setRegion(@Nullable String region) {
         this.region = region;
     }
 
+    @Nullable
     @JsonProperty
     public String getAccessKey() {
         return accessKey;
     }
 
     @JsonProperty
-    public void setAcccessKey(String key) {
+    public void setAcccessKey(@Nullable String key) {
         this.accessKey = key;
     }
 
+    @Nullable
     @JsonProperty
     public String getSecretKey() {
         return secretKey;
     }
 
     @JsonProperty
-    public void setSecretKey(String key) {
+    public void setSecretKey(@Nullable String key) {
         this.secretKey = key;
     }
 
+    @Nullable
     @JsonProperty
     public String getStsRoleArn() {
         return stsRoleArn;
     }
 
     @JsonProperty
-    public void setStsRoleArn(String arn) {
+    public void setStsRoleArn(@Nullable String arn) {
         this.stsRoleArn = arn;
     }
 

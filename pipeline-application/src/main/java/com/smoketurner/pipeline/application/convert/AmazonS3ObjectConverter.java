@@ -15,7 +15,6 @@
  */
 package com.smoketurner.pipeline.application.convert;
 
-import java.util.Optional;
 import com.amazonaws.services.s3.event.S3EventNotification.S3BucketEntity;
 import com.amazonaws.services.s3.event.S3EventNotification.S3Entity;
 import com.amazonaws.services.s3.event.S3EventNotification.S3EventNotificationRecord;
@@ -31,9 +30,8 @@ public class AmazonS3ObjectConverter
         final S3Entity s3 = a.getS3();
         final S3ObjectEntity object = s3.getObject();
         return new AmazonS3Object(a.getAwsRegion(), s3.getBucket().getName(),
-                object.getKey(), object.getSizeAsLong(),
-                Optional.ofNullable(object.geteTag()),
-                Optional.ofNullable(object.getVersionId()));
+                object.getKey(), object.getSizeAsLong(), object.geteTag(),
+                object.getVersionId());
     }
 
     @Override
