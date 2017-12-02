@@ -11,16 +11,12 @@
     <artifactId>pipeline-application</artifactId>
     <name>Pipeline Application</name>
 
-    <properties>
-        <package.name>pipeline</package.name>
-    </properties>
-
     <dependencyManagement>
         <dependencies>
             <dependency>
                 <groupId>com.amazonaws</groupId>
                 <artifactId>aws-java-sdk-bom</artifactId>
-                <version>1.11.232</version>
+                <version>1.11.241</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>

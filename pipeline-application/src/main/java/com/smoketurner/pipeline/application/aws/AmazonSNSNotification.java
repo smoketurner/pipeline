@@ -15,12 +15,11 @@
  */
 package com.smoketurner.pipeline.application.aws;
 
+import java.time.Clock;
+import java.time.Duration;
+import java.time.ZonedDateTime;
 import java.util.Objects;
 import javax.annotation.concurrent.Immutable;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
-import org.joda.time.Duration;
-import org.joda.time.Interval;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -34,7 +33,7 @@ import com.google.common.base.MoreObjects;
 public final class AmazonSNSNotification {
 
     private final String message;
-    private final DateTime timestamp;
+    private final ZonedDateTime timestamp;
 
     /**
      * Constructor
@@ -44,7 +43,7 @@ public final class AmazonSNSNotification {
      */
     @JsonCreator
     public AmazonSNSNotification(@JsonProperty("Message") final String message,
-            @JsonProperty("Timestamp") final DateTime timestamp) {
+            @JsonProperty("Timestamp") final ZonedDateTime timestamp) {
         this.message = message;
         this.timestamp = timestamp;
     }
@@ -55,15 +54,17 @@ public final class AmazonSNSNotification {
     }
 
     @JsonProperty("Timestamp")
-    public DateTime getTimestamp() {
+    public ZonedDateTime getTimestamp() {
         return timestamp;
     }
 
     @JsonIgnore
     public Duration getDelayDuration() {
-        final Interval interval = new Interval(timestamp,
-                DateTime.now(DateTimeZone.UTC));
-        return interval.toDuration();
+        if (timestamp == null) {
+            return null;
+        }
+        return Duration.between(timestamp,
+                ZonedDateTime.now(Clock.systemUTC()));
     }
 
     @JsonIgnore
