@@ -19,6 +19,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.Objects;
+import javax.annotation.Nullable;
 import javax.annotation.concurrent.Immutable;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -58,6 +59,7 @@ public final class AmazonSNSNotification {
         return timestamp;
     }
 
+    @Nullable
     @JsonIgnore
     public Duration getDelayDuration() {
         if (timestamp == null) {

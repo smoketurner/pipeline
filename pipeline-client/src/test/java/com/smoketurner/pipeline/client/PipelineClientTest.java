@@ -20,7 +20,7 @@ import org.junit.ClassRule;
 import org.junit.Test;
 import io.dropwizard.testing.junit.DropwizardClientRule;
 
-public class PIpelineClientTest {
+public class PipelineClientTest {
 
     @Path("/events")
     public static class EventResource {
