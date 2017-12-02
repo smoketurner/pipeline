@@ -39,8 +39,6 @@ import io.dropwizard.configuration.SubstitutingSourceProvider;
 import io.dropwizard.jetty.BiDiGzipHandler;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
-import io.federecio.dropwizard.swagger.SwaggerBundle;
-import io.federecio.dropwizard.swagger.SwaggerBundleConfiguration;
 
 public class PipelineApplication extends Application<PipelineConfiguration> {
 
@@ -61,14 +59,6 @@ public class PipelineApplication extends Application<PipelineConfiguration> {
         bootstrap.setConfigurationSourceProvider(new SubstitutingSourceProvider(
                 bootstrap.getConfigurationSourceProvider(),
                 new EnvironmentVariableSubstitutor(false)));
-
-        bootstrap.addBundle(new SwaggerBundle<PipelineConfiguration>() {
-            @Override
-            protected SwaggerBundleConfiguration getSwaggerBundleConfiguration(
-                    final PipelineConfiguration configuration) {
-                return configuration.getSwagger();
-            }
-        });
     }
 
     @Override

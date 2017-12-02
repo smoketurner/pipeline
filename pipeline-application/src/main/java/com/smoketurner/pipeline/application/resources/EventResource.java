@@ -30,11 +30,9 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.smoketurner.pipeline.application.core.InstrumentedSseBroadcaster;
 import io.dropwizard.util.Duration;
-import io.swagger.annotations.Api;
 
 @Singleton
 @Path("/v1/events")
-@Api(value = "events")
 public class EventResource {
 
     private static final Logger LOGGER = LoggerFactory

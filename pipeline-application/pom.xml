@@ -48,11 +48,6 @@
             <groupId>com.amazonaws</groupId>
             <artifactId>aws-java-sdk-sqs</artifactId>
         </dependency>
-        <dependency>
-            <groupId>com.smoketurner</groupId>
-            <artifactId>dropwizard-swagger</artifactId>
-            <version>1.1.0-1</version>
-        </dependency>
     </dependencies>
 
     <build>

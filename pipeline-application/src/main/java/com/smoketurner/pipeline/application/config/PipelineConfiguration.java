@@ -19,7 +19,6 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.dropwizard.Configuration;
-import io.federecio.dropwizard.swagger.SwaggerBundleConfiguration;
 
 public class PipelineConfiguration extends Configuration {
 
@@ -27,17 +26,8 @@ public class PipelineConfiguration extends Configuration {
     @NotNull
     private final AwsConfiguration aws = new AwsConfiguration();
 
-    @Valid
-    @NotNull
-    private final SwaggerBundleConfiguration swagger = new SwaggerBundleConfiguration();
-
     @JsonProperty
     public AwsConfiguration getAws() {
         return aws;
-    }
-
-    @JsonProperty
-    public SwaggerBundleConfiguration getSwagger() {
-        return swagger;
     }
 }

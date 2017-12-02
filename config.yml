@@ -4,17 +4,6 @@ aws:
   queueUrl: https://sqs.us-east-1.amazonaws.com/860114833029/smoketurner-queue
   region: us-east-1
 
-# Swagger-specific options.
-swagger:
-
-  resourcePackage: com.smoketurner.pipeline.application.resources
-  title: Pipeline API
-  version: v1
-  description: Pipeline service API
-  contact: jplock@smoketurner.com
-  license: Apache 2.0
-  licenseUrl: https://www.apache.org/licenses/LICENSE-2.0
-
 # HTTP-specific options.
 server:
 
