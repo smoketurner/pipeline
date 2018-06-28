@@ -1,11 +1,11 @@
-/**
- * Copyright 2018 Smoke Turner, LLC.
+/*
+ * Copyright © 2018 Smoke Turner, LLC (contact@smoketurner.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,33 +15,32 @@
  */
 package com.smoketurner.pipeline.application.managed;
 
-import java.util.Objects;
-import javax.annotation.Nonnull;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
 import io.dropwizard.lifecycle.Managed;
+import java.util.Objects;
+import javax.annotation.Nonnull;
 
 public class AmazonS3ClientManager implements Managed {
 
-    private final AmazonS3Client client;
+  private final AmazonS3Client client;
 
-    /**
-     * Constructor
-     *
-     * @param s3
-     *            AmazonS3 to manage
-     */
-    public AmazonS3ClientManager(@Nonnull final AmazonS3 s3) {
-        this.client = (AmazonS3Client) Objects.requireNonNull(s3);
-    }
+  /**
+   * Constructor
+   *
+   * @param s3 AmazonS3 to manage
+   */
+  public AmazonS3ClientManager(@Nonnull final AmazonS3 s3) {
+    this.client = (AmazonS3Client) Objects.requireNonNull(s3);
+  }
 
-    @Override
-    public void start() throws Exception {
-        // nothing to start
-    }
+  @Override
+  public void start() throws Exception {
+    // nothing to start
+  }
 
-    @Override
-    public void stop() throws Exception {
-        client.shutdown();
-    }
+  @Override
+  public void stop() throws Exception {
+    client.shutdown();
+  }
 }
