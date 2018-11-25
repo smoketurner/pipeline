@@ -1,5 +1,5 @@
 /*
- * Copyright © 2018 Smoke Turner, LLC (contact@smoketurner.com)
+ * Copyright © 2018 Smoke Turner, LLC (github@smoketurner.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,8 +39,8 @@ public final class AmazonSNSNotification {
   /**
    * Constructor
    *
-   * @param message
-   * @param timestamp
+   * @param message SNS message
+   * @param timestamp SNS timestamp
    */
   @JsonCreator
   public AmazonSNSNotification(

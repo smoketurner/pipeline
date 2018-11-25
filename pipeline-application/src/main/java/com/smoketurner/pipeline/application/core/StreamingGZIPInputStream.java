@@ -1,5 +1,5 @@
 /*
- * Copyright © 2018 Smoke Turner, LLC (contact@smoketurner.com)
+ * Copyright © 2018 Smoke Turner, LLC (github@smoketurner.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Objects;
 import java.util.zip.GZIPInputStream;
-import javax.annotation.Nonnull;
 
 public final class StreamingGZIPInputStream extends GZIPInputStream {
 
@@ -31,7 +30,7 @@ public final class StreamingGZIPInputStream extends GZIPInputStream {
    * @param is
    * @throws IOException
    */
-  public StreamingGZIPInputStream(@Nonnull final InputStream is) throws IOException {
+  public StreamingGZIPInputStream(final InputStream is) throws IOException {
     super(is);
     wrapped = Objects.requireNonNull(is);
   }

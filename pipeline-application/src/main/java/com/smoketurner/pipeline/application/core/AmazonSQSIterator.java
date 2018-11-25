@@ -1,5 +1,5 @@
 /*
- * Copyright © 2018 Smoke Turner, LLC (contact@smoketurner.com)
+ * Copyright © 2018 Smoke Turner, LLC (github@smoketurner.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,6 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,10 +58,10 @@ public class AmazonSQSIterator implements Iterator<List<Message>>, Closeable {
   /**
    * Constructor
    *
-   * @param client SQS client
+   * @param sqs SQS client
    * @param queueUrl Queue URL
    */
-  public AmazonSQSIterator(@Nonnull final AmazonSQS sqs, @Nonnull final String queueUrl) {
+  public AmazonSQSIterator(final AmazonSQS sqs, final String queueUrl) {
 
     this.sqs = Objects.requireNonNull(sqs);
     this.queueUrl = Objects.requireNonNull(queueUrl);
@@ -114,7 +113,7 @@ public class AmazonSQSIterator implements Iterator<List<Message>>, Closeable {
   /**
    * Delete a message from the SQS queue
    *
-   * @param messageHandle Message handle to delete
+   * @param message Message handle to delete
    * @return true if the delete was successful, otherwise false
    */
   public boolean deleteMessage(@Nullable final Message message) {
@@ -136,8 +135,6 @@ public class AmazonSQSIterator implements Iterator<List<Message>>, Closeable {
   /**
    * Return the approximate number of visible messages in an SQS queue.
    *
-   * @param client SQS client
-   * @param queueUrl Queue URL
    * @return approximate number of visible messages
    */
   private int getNumMessages() {
